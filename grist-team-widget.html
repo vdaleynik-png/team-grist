@@ -33,34 +33,30 @@
       --fade-stagger: 60ms;
       --hover-dur: 180ms;
 
-      /* ===== Фон: сетка (СТАТИЧНАЯ) + волны ===== */
+      /* ===== Фон: режим CALM (по умолчанию) ===== */
+      --bg-grid-speed: 120s;             /* дрейф сетки (чем больше — тем медленнее) */
+      --bg-parallax-speed: 160s;         /* параллакс свечений */
+      --bg-beam-speed: 36s;              /* движение диагонального луча */
+      --bg-glow-a: rgba(22,179,120,.14); /* верхнее свечение */
+      --bg-glow-b: rgba(22,179,120,.10); /* нижнее свечение */
       --grid-h: rgba(255,255,255,.035);  /* горизонтальные линии сетки */
       --grid-v: rgba(255,255,255,.040);  /* вертикальные линии сетки */
       --grid-size: 72px;
-
-      /* Волны — интенсивность/скорость по умолчанию */
-      --wave-color-1: rgba(22,179,120,.12);
-      --wave-color-2: rgba(22,179,120,.09);
-      --wave-color-3: rgba(22,179,120,.07);
-      --wave-speed-1: 42s;
-      --wave-speed-2: 60s;
-      --wave-speed-3: 85s;
-      --wave-vert-1: 0px;   /* лёгкое покачивание по Y */
-      --wave-vert-2: 2px;
-      --wave-vert-3: 4px;
+      --beam-color: rgba(22,179,120,.085);
+      --beam-blur: 12px;
     }
 
-    /* ===== Режим VIVID (заметнее анимации) — включает классом на body или ?motion=vivid ===== */
+    /* ===== Режим VIVID (заметнее анимации) — включается классом на body ===== */
     body.motion-vivid{
-      --wave-color-1: rgba(22,179,120,.16);
-      --wave-color-2: rgba(22,179,120,.12);
-      --wave-color-3: rgba(22,179,120,.10);
-      --wave-speed-1: 28s;
-      --wave-speed-2: 42s;
-      --wave-speed-3: 60s;
-      --wave-vert-1: 2px;
-      --wave-vert-2: 4px;
-      --wave-vert-3: 6px;
+      --bg-grid-speed: 45s;
+      --bg-parallax-speed: 60s;
+      --bg-beam-speed: 24s;
+      --bg-glow-a: rgba(22,179,120,.22);
+      --bg-glow-b: rgba(22,179,120,.16);
+      --grid-h: rgba(255,255,255,.06);
+      --grid-v: rgba(255,255,255,.06);
+      --beam-color: rgba(22,179,120,.12);
+      --beam-blur: 12px;
     }
 
     *{box-sizing:border-box}
@@ -71,46 +67,55 @@
       overflow-x:hidden;
     }
 
-    /* ===== Слой 1: СТАТИЧНАЯ сетка (без анимации) ===== */
+    /* ===== Слой 1: мягкие зелёные «свечения» с параллаксом ===== */
+    body::after{
+      content:"";
+      position:fixed; inset:-15%;
+      z-index:0; pointer-events:none;
+      background:
+        radial-gradient(1100px 720px at 110% -10%, var(--bg-glow-a), transparent 60%),
+        radial-gradient(900px 600px at -8% 120%,  var(--bg-glow-b), transparent 60%);
+      filter: blur(18px);
+      animation: parallax var(--bg-parallax-speed) linear infinite;
+    }
+    @keyframes parallax{
+      0%   { transform: translate3d(0,0,0) rotate(0deg)   scale(1.02); }
+      50%  { transform: translate3d(14px,-10px,0) rotate(180deg) scale(1.02); }
+      100% { transform: translate3d(0,0,0) rotate(360deg) scale(1.02); }
+    }
+
+    /* ===== Слой 2: тонкая «сетка» с медленным дрейфом ===== */
     body::before{
       content:"";
       position:fixed; inset:-10%;
-      z-index:0; pointer-events:none;
+      z-index:1; pointer-events:none;
       background:
         repeating-linear-gradient(0deg,  var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
         repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size));
       background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
+      animation: gridDrift var(--bg-grid-speed) linear infinite;
+    }
+    @keyframes gridDrift{
+      0%   { background-position: 0 0, 0 0; }
+      100% { background-position: 0 calc(-1 * var(--grid-size)), calc(-1 * var(--grid-size)) 0; }
     }
 
-    /* ===== Слой 2: SVG-волны с плавным движением ===== */
-    .bg-waves{
-      position:fixed; inset:-1px; /* чуть больше фрейма, чтобы не видно было краёв при блюре */
-      z-index:1; pointer-events:none;
-      opacity:1;
+    /* ===== Слой 3: диагональный «луч» (широкая мягкая полоска) ===== */
+    .bg-beam{
+      position:fixed; inset:-20%;
+      z-index:2; pointer-events:none;
+      background: linear-gradient(130deg, transparent 40%, var(--beam-color) 50%, transparent 60%);
+      background-size: 200% 200%;
+      filter: blur(var(--beam-blur));
+      animation: beamSlide var(--bg-beam-speed) ease-in-out infinite;
     }
-    .bg-waves .wave{ will-change: transform; }
-    .bg-waves .wave.wave1{ animation: waveScroll1 var(--wave-speed-1) linear infinite; }
-    .bg-waves .wave.wave2{ animation: waveScroll2 var(--wave-speed-2) linear infinite; }
-    .bg-waves .wave.wave3{ animation: waveScroll3 var(--wave-speed-3) linear infinite; }
-
-    /* RU: бесшовная прокрутка — двигаем группу с двойным use на ширину вьюбокса */
-    @keyframes waveScroll1{
-      0%   { transform: translate3d(0, var(--wave-vert-1), 0); }
-      50%  { transform: translate3d(-720px, calc(var(--wave-vert-1) * -1), 0); }
-      100% { transform: translate3d(-1440px, var(--wave-vert-1), 0); }
-    }
-    @keyframes waveScroll2{
-      0%   { transform: translate3d(0, var(--wave-vert-2), 0); }
-      50%  { transform: translate3d(-720px, calc(var(--wave-vert-2) * -1), 0); }
-      100% { transform: translate3d(-1440px, var(--wave-vert-2), 0); }
-    }
-    @keyframes waveScroll3{
-      0%   { transform: translate3d(0, var(--wave-vert-3), 0); }
-      50%  { transform: translate3d(-720px, calc(var(--wave-vert-3) * -1), 0); }
-      100% { transform: translate3d(-1440px, var(--wave-vert-3), 0); }
+    @keyframes beamSlide{
+      0%   { background-position: 0% 0%;    transform: translate3d(0,0,0); }
+      50%  { background-position: 100% 100%; transform: translate3d(8px,-8px,0); }
+      100% { background-position: 0% 0%;    transform: translate3d(0,0,0); }
     }
 
-    .wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px; position:relative; z-index:2;}
+    .wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px; position:relative; z-index:3;}
 
     /* ---------- Header ---------- */
     .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px}
@@ -164,9 +169,11 @@
 
     .empty{opacity:.8; color:var(--muted); text-align:center; padding:26px}
 
-    /* Reduce Motion — можно форсировать классом .force-motion */
+    /* Reduce Motion уважаем, но можно форсировать классом .force-motion */
     @media (prefers-reduced-motion: reduce){
-      body:not(.force-motion) .bg-waves .wave,
+      body:not(.force-motion)::after,
+      body:not(.force-motion)::before,
+      body:not(.force-motion) .bg-beam,
       body:not(.force-motion) .card{
         animation: none !important;
       }
@@ -176,33 +183,8 @@
   </style>
 </head>
 <body>
-  <!-- Слой 2: SVG-волны (три дорожки). Сетка остаётся статичной на body::before -->
-  <svg class="bg-waves" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
-    <defs>
-      <!-- RU: три формы волн (чуть разные амплитуда/фаза), чтобы картинка была живее -->
-      <path id="wave1" d="M0,200 C240,170 480,230 720,200 C960,170 1200,130 1440,160 L1440,320 L0,320 Z"></path>
-      <path id="wave2" d="M0,210 C240,240 480,180 720,210 C960,240 1200,200 1440,220 L1440,320 L0,320 Z"></path>
-      <path id="wave3" d="M0,190 C240,150 480,210 720,190 C960,170 1200,190 1440,180 L1440,320 L0,320 Z"></path>
-    </defs>
-
-    <!-- Волна 1 (самая яркая) -->
-    <g class="wave wave1" fill="var(--wave-color-1)">
-      <use href="#wave1" x="0" y="0"></use>
-      <use href="#wave1" x="1440" y="0"></use>
-    </g>
-
-    <!-- Волна 2 -->
-    <g class="wave wave2" fill="var(--wave-color-2)">
-      <use href="#wave2" x="0" y="0"></use>
-      <use href="#wave2" x="1440" y="0"></use>
-    </g>
-
-    <!-- Волна 3 (самая лёгкая) -->
-    <g class="wave wave3" fill="var(--wave-color-3)">
-      <use href="#wave3" x="0" y="0"></use>
-      <use href="#wave3" x="1440" y="0"></use>
-    </g>
-  </svg>
+  <!-- Слой 3: диагональный луч -->
+  <div class="bg-beam" aria-hidden="true"></div>
 
   <div class="wrapper">
     <div class="topbar">
@@ -249,7 +231,7 @@
         enforceStyle: 'light'       // если параметр style отсутствует — подставить 'light'
       },
 
-      /* RU: Настройки движения фона (волны) */
+      /* RU: Настройки движения фона */
       motion: {
         level: 'vivid',             // 'calm' | 'vivid' (по твоей просьбе — заметнее)
         force: false                // true = игнорировать системный Reduce Motion
