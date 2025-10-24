@@ -1,367 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Team Directory — Grist Widget</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Team Directory — Grist Widget</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Grist Plugin API -->
-  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<style>
+:root{
+  --bg:#0f1116; --panel:#151922; --panel-2:#1b2230; --text:#e7ecf2; --muted:#8b96a9;
+  --accent: var(--grist-primary-fg, #16B378);
+  --accent-weak: var(--grist-color-lighter-green, #B1FFE2);
+  --selection: var(--grist-color-selection, rgba(22,179,120,.15));
 
-  <!-- Шрифт (можно убрать/заменить) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  --fade-dur: 420ms; --fade-ease: cubic-bezier(.2,.8,.2,1); --fade-stagger: 60ms; --hover-dur: 180ms;
 
-  <style>
-    :root{
-      /* ===== Базовая тема (в духе Grist) ===== */
-      --bg:#0f1116;
-      --panel:#151922;
-      --panel-2:#1b2230;
-      --text:#e7ecf2;
-      --muted:#8b96a9;
+  /* сетка (статичная) */
+  --grid-h: rgba(255,255,255,.035);
+  --grid-v: rgba(255,255,255,.040);
+  --grid-size: 72px;
 
-      /* Акценты Grist с фолбэками */
-      --accent: var(--grist-primary-fg, #16B378);
-      --accent-weak: var(--grist-color-lighter-green, #B1FFE2);
-      --selection: var(--grist-color-selection, rgba(22,179,120,.15));
+  /* волны — по умолчанию спокойные */
+  --wave-color-1: rgba(22,179,120,.14);
+  --wave-color-2: rgba(22,179,120,.10);
+  --wave-color-3: rgba(22,179,120,.08);
+  --wave-speed-1: 48s;
+  --wave-speed-2: 70s;
+  --wave-speed-3: 95s;
+  --wave-amp-1: 8;   /* амплитуда S-кривых (px) */
+  --wave-amp-2: 10;
+  --wave-amp-3: 12;
+  --wave-height: 42vh; /* высота блока волн у нижней кромки */
+}
+/* более заметный режим — можно включить ?motion=vivid */
+body.motion-vivid{
+  --wave-color-1: rgba(22,179,120,.18);
+  --wave-color-2: rgba(22,179,120,.14);
+  --wave-color-3: rgba(22,179,120,.11);
+  --wave-speed-1: 36s; --wave-speed-2: 54s; --wave-speed-3: 76s;
+  --wave-amp-1: 10; --wave-amp-2: 12; --wave-amp-3: 14;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;color:var(--text);background:var(--bg);overflow-x:hidden}
 
-      /* ===== Настройки плавности ===== */
-      --fade-dur: 420ms;                /* длительность проявления карточек */
-      --fade-ease: cubic-bezier(.2,.8,.2,1);
-      --fade-stagger: 60ms;             /* «ступенчатая» задержка между карточками */
-      --hover-dur: 180ms;               /* плавность hover-эффектов */
+/* СТАТИЧНАЯ СЕТКА (фон) */
+body::before{
+  content:""; position:fixed; inset:-10%; z-index:0; pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,  var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
+    repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size));
+  background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
+}
 
-      /* ===== Настройки фона ===== */
-      --bg-grid-speed: 160s;            /* скорость дрейфа сетки (чем больше — тем медленнее) */
-      --bg-parallax-speed: 160s;        /* скорость плавного параллакса свечений */
-      --bg-glow-a: rgba(22,179,120,.14);/* интенсивность верхнего свечения */
-      --bg-glow-b: rgba(22,179,120,.10);/* интенсивность нижнего свечения */
-      --grid-h: rgba(255,255,255,.028); /* горизонтальные линии сетки */
-      --grid-v: rgba(255,255,255,.030); /* вертикальные линии сетки */
-      --grid-size: 72px;
-    }
+/* ВОЛНЫ: закреплены снизу, под контентом */
+.bg-waves{
+  position:fixed; left:-2vw; right:-2vw; bottom:-1px; height:var(--wave-height);
+  z-index:1; pointer-events:none; opacity:1;
+  filter: blur(6px); /* сглаживаем края и углы */
+}
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      color:var(--text); background: var(--bg);
-      overflow-x:hidden;
-    }
+/* каждая дорожка волны — плавный бесшовный скролл */
+.bg-waves .layer{ will-change: transform }
+.bg-waves .l1{ animation: scroll1 var(--wave-speed-1) linear infinite }
+.bg-waves .l2{ animation: scroll2 var(--wave-speed-2) linear infinite }
+.bg-waves .l3{ animation: scroll3 var(--wave-speed-3) linear infinite }
 
-    /* ===== Плавный «живой» фон =====
-       Слой 1 (ниже): мягкие радиальные свечения, очень медленная параллакс-анимация.
-       Слой 2 (выше): тонкая сетка + лёгкий дрейф фона (background-position).
-    */
-    body::after{
-      content:"";
-      position:fixed; inset:-15%;
-      z-index:-3; pointer-events:none;
-      background:
-        radial-gradient(1100px 720px at 110% -10%, var(--bg-glow-a), transparent 60%),
-        radial-gradient(900px 600px at -8% 120%,  var(--bg-glow-b), transparent 60%);
-      filter: blur(18px);
-      /* параллакс — очень медленный, без рывков и без изменения прозрачности */
-      animation-name: parallax;
-      animation-duration: var(--bg-parallax-speed);
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
-    }
-    @keyframes parallax{
-      0%   { transform: translate3d(0,0,0) rotate(0deg)   scale(1.02); }
-      50%  { transform: translate3d(12px,-8px,0) rotate(180deg) scale(1.02); }
-      100% { transform: translate3d(0,0,0) rotate(360deg) scale(1.02); }
-    }
+@keyframes scroll1{
+  0%{ transform: translate3d(0,0,0) }
+  50%{ transform: translate3d(-720px, calc(-1px * var(--wave-amp-1)), 0) }
+  100%{ transform: translate3d(-1440px, 0, 0) }
+}
+@keyframes scroll2{
+  0%{ transform: translate3d(0,0,0) }
+  50%{ transform: translate3d(-720px, calc( 1px * var(--wave-amp-2)), 0) }
+  100%{ transform: translate3d(-1440px, 0, 0) }
+}
+@keyframes scroll3{
+  0%{ transform: translate3d(0,0,0) }
+  50%{ transform: translate3d(-720px, calc(-1px * var(--wave-amp-3)), 0) }
+  100%{ transform: translate3d(-1440px, 0, 0) }
+}
 
-    body::before{
-      content:"";
-      position:fixed; inset:-10%;
-      z-index:-2; pointer-events:none;
-      background:
-        repeating-linear-gradient(0deg,  var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
-        repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size));
-      background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
-      /* очень медленный дрейф сетки */
-      animation-name: gridDrift;
-      animation-duration: var(--bg-grid-speed);
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
-    }
-    @keyframes gridDrift{
-      0%   { background-position: 0 0, 0 0; }
-      100% { background-position: 0 calc(-1 * var(--grid-size)), calc(-1 * var(--grid-size)) 0; }
-    }
+.wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px; position:relative; z-index:2}
+.topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px}
+.title{font-size:22px; font-weight:700; letter-spacing:.2px}
 
-    .wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px}
-
-    /* ---------- Header ---------- */
-    .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px}
-    .title{font-size:22px; font-weight:700; letter-spacing:.2px}
-
-    /* ---------- Grid & Cards ---------- */
-    .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:14px}
-
-    .card{
-      grid-column: span 12;
-      position:relative; overflow:hidden;
-      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
-      border:1px solid #232a37; border-radius:18px; padding:18px;
-
-      /* мягкое проявление без сдвигов */
-      opacity:0;
-      animation: fadeIn var(--fade-dur) var(--fade-ease) both;
-      animation-delay: var(--delay, 0ms);
-
-      /* на наведении — только лёгкое изменение фона/границы */
-      transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
-    }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-
-    .card:hover{
-      background:linear-gradient(180deg, rgba(22,179,120,.06), rgba(61,217,163,.02));
-      border-color:#2d3647;
-    }
-
-    .row{display:grid; grid-template-columns:1.6fr 1.4fr auto; align-items:center; gap:12px}
-    .name{font-weight:600; font-size:16px}
-    .role{color:var(--muted)}
-
-    .badge{
-      display:inline-flex; align-items:center; gap:8px;
-      background:rgba(22,179,120,.14);
-      color:#b9ffe7;
-      border:1px solid rgba(22,179,120,.42);
-      padding:8px 11px; border-radius:999px; font-weight:600; font-size:13px; text-decoration:none;
-      transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
-    }
-    .badge:hover{
-      background:rgba(22,179,120,.18);
-      border-color:rgba(22,179,120,.52);
-    }
-    .badge:focus-visible{ outline:0; box-shadow:0 0 0 6px var(--selection); }
-    .ext{ width:16px; height:16px; display:inline-block; }
-
-    @media (min-width:700px){ .card{ grid-column: span 6 } }
-    @media (min-width:980px){ .card{ grid-column: span 4 } }
-
-    .empty{opacity:.8; color:var(--muted); text-align:center; padding:26px}
-
-    /* Системная настройка «уменьшить движение» */
-    @media (prefers-reduced-motion: reduce){
-      body::after, body::before{ animation: none !important }
-      .card{ animation: none !important; opacity:1 !important }
-      .badge, .card{ transition: none !important }
-    }
-  </style>
+.grid{display:grid; grid-template-columns:repeat(12,1fr); gap:14px}
+.card{
+  grid-column: span 12; position:relative; overflow:hidden;
+  background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+  border:1px solid #232a37; border-radius:18px; padding:18px;
+  opacity:0; animation: fadeIn var(--fade-dur) var(--fade-ease) both; animation-delay: var(--delay, 0ms);
+  transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
+}
+@keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+.card:hover{ background:linear-gradient(180deg, rgba(22,179,120,.08), rgba(61,217,163,.03)); border-color:#2d3647 }
+.row{display:grid; grid-template-columns:1.6fr 1.4fr auto; align-items:center; gap:12px}
+.name{font-weight:600; font-size:16px}
+.role{color:var(--muted)}
+.badge{
+  display:inline-flex; align-items:center; gap:8px; background:rgba(22,179,120,.16);
+  color:#b9ffe7; border:1px solid rgba(22,179,120,.45); padding:8px 11px; border-radius:999px;
+  font-weight:600; font-size:13px; text-decoration:none; transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
+}
+.badge:hover{ background:rgba(22,179,120,.20); border-color:rgba(22,179,120,.55) }
+.badge:focus-visible{ outline:0; box-shadow:0 0 0 6px var(--selection) }
+.ext{width:16px; height:16px; display:inline-block}
+@media (min-width:700px){ .card{ grid-column: span 6 } }
+@media (min-width:980px){ .card{ grid-column: span 4 } }
+.empty{opacity:.8; color:var(--muted); text-align:center; padding:26px}
+@media (prefers-reduced-motion: reduce){
+  body:not(.force-motion) .bg-waves .layer, body:not(.force-motion) .card{ animation:none !important }
+  body:not(.force-motion) .card{ opacity:1 !important }
+  body:not(.force-motion) .badge, body:not(.force-motion) .card{ transition:none !important }
+}
+</style>
 </head>
 <body>
-  <div class="wrapper">
-    <div class="topbar">
-      <div class="title">Team directory</div>
-      <!-- никаких футеров/ссылок, как просил -->
-    </div>
 
-    <div id="grid" class="grid" aria-live="polite"></div>
+<!-- ВОЛНЫ: три слоя, закреплены ВНИЗУ, за карточками -->
+<svg class="bg-waves" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+  <defs>
+    <!-- RU: широкие гладкие S-кривые (без острых углов), шире вьюпорта, чтобы не было швов -->
+    <path id="s1" d="M-100,210 C200,180 520,240 820,210 C1120,180 1420,150 1640,180 L1640,400 L-100,400 Z"></path>
+    <path id="s2" d="M-100,205 C220,235 520,185 820,210 C1120,235 1420,200 1640,220 L1640,400 L-100,400 Z"></path>
+    <path id="s3" d="M-100,195 C200,155 520,215 820,195 C1120,175 1420,195 1640,185 L1640,400 L-100,400 Z"></path>
+    <filter id="soften" x="-20%" y="-20%" width="140%" height="140%">
+      <!-- RU: мягкое сглаживание краёв -->
+      <feGaussianBlur stdDeviation="4" />
+    </filter>
+  </defs>
+
+  <g class="layer l3" filter="url(#soften)" fill="var(--wave-color-3)">
+    <use href="#s3" x="0" y="0"></use>
+    <use href="#s3" x="1440" y="0"></use>
+  </g>
+  <g class="layer l2" filter="url(#soften)" fill="var(--wave-color-2)">
+    <use href="#s2" x="0" y="0"></use>
+    <use href="#s2" x="1440" y="0"></use>
+  </g>
+  <g class="layer l1" filter="url(#soften)" fill="var(--wave-color-1)">
+    <use href="#s1" x="0" y="0"></use>
+    <use href="#s1" x="1440" y="0"></use>
+  </g>
+</svg>
+
+<div class="wrapper">
+  <div class="topbar">
+    <div class="title">Team directory</div>
   </div>
 
-  <!-- Card template -->
-  <template id="cardTpl">
-    <div class="card">
-      <div class="row">
-        <div class="name"></div>
-        <div class="role"></div>
-        <a class="badge" target="_blank" rel="noopener noreferrer" href="#" aria-label="Open workspace">
-          <svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/>
-            <line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-          Open workspace
-        </a>
-      </div>
+  <div id="grid" class="grid" aria-live="polite"></div>
+</div>
+
+<template id="cardTpl">
+  <div class="card">
+    <div class="row">
+      <div class="name"></div>
+      <div class="role"></div>
+      <a class="badge" target="_blank" rel="noopener noreferrer" href="#" aria-label="Open workspace">
+        <svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Open workspace
+      </a>
     </div>
-  </template>
+  </div>
+</template>
 
-  <script>
-    // =======================
-    //  CONFIG
-    // =======================
-    const CONFIG = {
-      /* RU: Жёстко задаём имена колонок по твоей таблице */
-      columns: {
-        name: 'Staff',
-        role: 'Role',
-        link: 'Workspace_link'      // это ID колонки (без $)
-      },
+<script>
+/* ===== CONFIG ===== */
+const CONFIG = {
+  columns: { name: 'Staff', role: 'Role', link: 'Workspace_link' },
+  linkPolicy: { enforceEmbed: true, enforceStyle: 'light' },
+  motion: { level: 'vivid', force: false },
+  demoData: []
+};
 
-      /* RU: Политика обработки ссылок */
-      linkPolicy: {
-        enforceEmbed: true,         // добавлять embed=true для docs.getgrist.com
-        enforceStyle: 'light'       // если параметр style отсутствует — подставить 'light'
-      },
-
-      /* RU: Демоданные — если запустить вне Grist */
-      demoData: []
-    };
-
-    // =======================
-    //  Утилиты
-    // =======================
-    const $ = (sel, root=document) => root.querySelector(sel);
-    const normalizeId = (s) => (s||'').toString().replace(/^\$/,''); // убираем $ в начале ID
-
-    // RU: безопасное извлечение URL из разных форматов ячейки
-    function extractUrl(val){
-      if (!val) return '';
-
-      // 1) Объект HyperLink {url, label}
-      if (typeof val === 'object') {
-        const u = val.url || val.href || val.link || '';
-        return sanitizeUrl(u);
-      }
-
-      const s = String(val).trim();
-
-      // 2) Markdown: [label](url)
-      const md = s.match(/\[[^\]]*\]\(([^)]+)\)/);
-      if (md && md[1]) return sanitizeUrl(md[1]);
-
-      // 3) HTML: <a href="...">...</a>
-      const ah = s.match(/href\s*=\s*["']([^"']+)["']/i);
-      if (ah && ah[1]) return sanitizeUrl(ah[1]);
-
-      // 4) Просто URL/домен/путь
-      return sanitizeUrl(s);
+/* ===== utils ===== */
+const $ = (s, r=document)=>r.querySelector(s);
+const normalizeId = s => (s||'').toString().replace(/^\$/,'');
+function extractUrl(val){
+  if (!val) return '';
+  if (typeof val === 'object') return sanitizeUrl(val.url || val.href || val.link || '');
+  const str = String(val).trim();
+  const md = str.match(/\[[^\]]*\]\(([^)]+)\)/); if (md) return sanitizeUrl(md[1]);
+  const ah = str.match(/href\s*=\s*["']([^"']+)["']/i); if (ah) return sanitizeUrl(ah[1]);
+  return sanitizeUrl(str);
+}
+function sanitizeUrl(raw){
+  if (!raw) return '';
+  let u = String(raw).trim().replace(/^(https?):\/(?!\/)/i, (_,p)=>`${p}://`);
+  if (!/^[a-z]+:\/\//i.test(u) && (/^docs\.getgrist\.com\b/i.test(u) || /^[a-z0-9.-]+\.[a-z]{2,}\b/i.test(u))) u = 'https://' + u;
+  if (/^\s*javascript:/i.test(u) || /^\s*data:/i.test(u)) return '';
+  try{
+    const url = new URL(u);
+    if (CONFIG.linkPolicy?.enforceEmbed && /(^|\.)docs\.getgrist\.com$/i.test(url.hostname)) {
+      if (!url.searchParams.has('embed')) url.searchParams.set('embed','true');
+      const style = CONFIG.linkPolicy.enforceStyle;
+      if (style && !url.searchParams.has('style')) url.searchParams.set('style', style);
+      u = url.toString();
     }
+  }catch(e){}
+  return u;
+}
+function resolveColumns(keys0){
+  const keys = keys0.map(k=>k.toString()), lc = keys.map(k=>k.toLowerCase());
+  const want = { name:normalizeId(CONFIG.columns.name), role:normalizeId(CONFIG.columns.role), link:normalizeId(CONFIG.columns.link) };
+  const out = {name:null, role:null, link:null};
+  for (const k of ['name','role','link']){ if (!want[k]) continue; const i = lc.indexOf(want[k].toLowerCase()); if (i>-1) out[k]=keys[i]; }
+  const pick=(cur,cands)=>{ if(cur) return cur; for(const c of cands){ let i=lc.indexOf(c.toLowerCase()); if(i>-1) return keys[i]; i=lc.findIndex(x=>x.includes(c.toLowerCase())); if(i>-1) return keys[i]; } return null; };
+  return { name:pick(out.name,['staff','name','employee']), role:pick(out.role,['role','title','position']), link:pick(out.link,['workspace_link','workspace','link','url']) };
+}
+function mapRow(row, cols){
+  const f = row.fields || row;
+  return { name: f?.[cols.name] ?? '', role: f?.[cols.role] ?? '', link: extractUrl(f?.[cols.link]) };
+}
+function render(records){
+  const grid = $('#grid'); grid.innerHTML='';
+  if(!records||!records.length){ grid.innerHTML='<div class="empty">No data found</div>'; return; }
+  const tpl=$('#cardTpl'); const frag=document.createDocumentFragment();
+  records.forEach((r,i)=>{ const card=tpl.content.firstElementChild.cloneNode(true);
+    card.style.setProperty('--delay', `calc(${i} * var(--fade-stagger))`);
+    $('.name',card).textContent=r.name||'—'; $('.role',card).textContent=r.role||'';
+    const a=$('a.badge',card); if(r.link){ a.href=r.link } else { a.remove() }
+    frag.appendChild(card);
+  });
+  grid.appendChild(frag);
+}
 
-    // RU: нормализация и защита URL
-    function sanitizeUrl(raw){
-      if (!raw) return '';
-      let u = String(raw).trim();
+/* ===== init + motion control ===== */
+(function init(){
+  try{ const qs=new URLSearchParams(location.search); const m=(qs.get('motion')||'').toLowerCase();
+    if(m==='vivid'||m==='calm') CONFIG.motion.level=m;
+    if(m==='on'||m==='vivid') CONFIG.motion.force=true;
+  }catch(e){}
+  document.body.classList.add(`motion-${CONFIG.motion.level||'calm'}`); if(CONFIG.motion.force) document.body.classList.add('force-motion');
 
-      // починка опечатки https:/ -> https://
-      u = u.replace(/^(https?):\/(?!\/)/i, (_,p) => `${p}://`);
-
-      // если схема отсутствует, но строка похожа на домен docs.getgrist.com или любой домен — добавим https://
-      if (!/^[a-z]+:\/\//i.test(u)) {
-        if (/^docs\.getgrist\.com\b/i.test(u) || /^[a-z0-9.-]+\.[a-z]{2,}\b/i.test(u)) {
-          u = 'https://' + u;
-        }
-      }
-
-      // запрет опасных схем
-      if (/^\s*javascript:/i.test(u) || /^\s*data:/i.test(u)) return '';
-
-      // добавить embed/style для docs.getgrist.com (если включено)
-      try {
-        const url = new URL(u);
-        if (CONFIG.linkPolicy?.enforceEmbed && /(^|\.)docs\.getgrist\.com$/i.test(url.hostname)) {
-          if (!url.searchParams.has('embed')) url.searchParams.set('embed','true');
-          const style = CONFIG.linkPolicy.enforceStyle;
-          if (style && !url.searchParams.has('style')) url.searchParams.set('style', style);
-          u = url.toString();
-        }
-      } catch(e){
-        // если new URL не справился — оставим как есть
-      }
-
-      return u;
-    }
-
-    // RU: сопоставление названий столбцов (ID)
-    function resolveColumns(allKeys){
-      const keys = allKeys.map(k => k.toString());
-      const lc = keys.map(k => k.toLowerCase());
-      const want = {
-        name: normalizeId(CONFIG.columns.name),
-        role: normalizeId(CONFIG.columns.role),
-        link: normalizeId(CONFIG.columns.link)
-      };
-
-      const out = {name:null, role:null, link:null};
-      for(const k of ['name','role','link']){
-        if(!want[k]) continue;
-        const idx = lc.indexOf(want[k].toLowerCase());
-        if(idx>-1) out[k] = keys[idx];
-      }
-
-      // fallback на подстрочный поиск
-      const pick = (cur, cands) => {
-        if(cur) return cur;
-        for(const cand of cands){
-          let i = lc.indexOf(cand.toLowerCase());
-          if(i>-1) return keys[i];
-          i = lc.findIndex(x => x.includes(cand.toLowerCase()));
-          if(i>-1) return keys[i];
-        }
-        return null;
-      };
-
-      return {
-        name: pick(out.name, ['staff','name','employee']),
-        role: pick(out.role, ['role','title','position']),
-        link: pick(out.link, ['workspace_link','workspace','link','url'])
-      };
-    }
-
-    // RU: нормализация одной строки таблицы
-    function mapRow(row, cols){
-      const src = row.fields || row;
-      const item = {
-        name: src?.[cols.name] ?? '',
-        role: src?.[cols.role] ?? '',
-        link: extractUrl(src?.[cols.link])
-      };
-      return item;
-    }
-
-    // RU: рендерим пачкой через DocumentFragment (меньше перерисовок)
-    function render(records){
-      const grid = $('#grid');
-      grid.innerHTML = '';
-      if(!records || !records.length){
-        grid.innerHTML = `<div class="empty">No data found</div>`;
-        return;
-      }
-      const tpl = $('#cardTpl');
-      const frag = document.createDocumentFragment();
-      records.forEach((r, i) => {
-        const card = tpl.content.firstElementChild.cloneNode(true);
-        // мягкий «стаггер» по непрозрачности
-        card.style.setProperty('--delay', `calc(${i} * var(--fade-stagger))`);
-        $('.name', card).textContent = r.name || '—';
-        $('.role', card).textContent = r.role || '';
-        const a = $('a.badge', card);
-        if(r.link){ a.href = r.link; } else { a.remove(); }
-        frag.appendChild(card);
-      });
-      grid.appendChild(frag);
-    }
-
-    // =======================
-    //  Инициализация
-    // =======================
-    (function init(){
-      if(!window.grist){
-        const demo = CONFIG.demoData && CONFIG.demoData.length ? CONFIG.demoData : [];
-        render(demo);
-        return;
-      }
-
-      grist.ready({requiredAccess: 'read table'});
-      grist.onRecords((rows) => {
-        if(!rows || !rows.length){ render([]); return; }
-        const first = rows[0] || {};
-        const obj = first.fields || first;
-        const allCols = Object.keys(obj || {});
-        const cols = resolveColumns(allCols);
-        const data = rows.map(r => mapRow(r, cols));
-        render(data);  // порядок как в таблице, без сортировки
-      });
-    })();
-  </script>
+  if(!window.grist){ render(CONFIG.demoData.length?CONFIG.demoData:[]); return; }
+  grist.ready({requiredAccess:'read table'});
+  grist.onRecords(rows=>{
+    if(!rows||!rows.length){ render([]); return; }
+    const first=rows[0]||{}; const obj=first.fields||first; const cols=resolveColumns(Object.keys(obj||{}));
+    render(rows.map(r=>mapRow(r,cols)));
+  });
+})();
+</script>
 </body>
 </html>
-
