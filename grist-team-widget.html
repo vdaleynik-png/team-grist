@@ -27,36 +27,20 @@
       --accent-weak: var(--grist-color-lighter-green, #B1FFE2);
       --selection: var(--grist-color-selection, rgba(22,179,120,.15));
 
-      /* ===== Плавность карточек ===== */
-      --fade-dur: 420ms;
+      /* ===== Настройки плавности ===== */
+      --fade-dur: 420ms;                /* длительность проявления карточек */
       --fade-ease: cubic-bezier(.2,.8,.2,1);
-      --fade-stagger: 60ms;
-      --hover-dur: 180ms;
+      --fade-stagger: 60ms;             /* «ступенчатая» задержка между карточками */
+      --hover-dur: 180ms;               /* плавность hover-эффектов */
 
-      /* ===== Фон: режим CALM (по умолчанию) ===== */
-      --bg-grid-speed: 120s;             /* дрейф сетки (чем больше — тем медленнее) */
-      --bg-parallax-speed: 160s;         /* параллакс свечений */
-      --bg-beam-speed: 36s;              /* движение диагонального луча */
-      --bg-glow-a: rgba(22,179,120,.14); /* верхнее свечение */
-      --bg-glow-b: rgba(22,179,120,.10); /* нижнее свечение */
-      --grid-h: rgba(255,255,255,.035);  /* горизонтальные линии сетки */
-      --grid-v: rgba(255,255,255,.040);  /* вертикальные линии сетки */
+      /* ===== Настройки фона ===== */
+      --bg-grid-speed: 120s;            /* скорость дрейфа сетки (чем больше — тем медленнее) */
+      --bg-parallax-speed: 160s;        /* скорость плавного параллакса свечений */
+      --bg-glow-a: rgba(22,179,120,.14);/* интенсивность верхнего свечения */
+      --bg-glow-b: rgba(22,179,120,.10);/* интенсивность нижнего свечения */
+      --grid-h: rgba(255,255,255,.028); /* горизонтальные линии сетки */
+      --grid-v: rgba(255,255,255,.030); /* вертикальные линии сетки */
       --grid-size: 72px;
-      --beam-color: rgba(22,179,120,.085);
-      --beam-blur: 12px;
-    }
-
-    /* ===== Режим VIVID (заметнее анимации) — включается классом на body ===== */
-    body.motion-vivid{
-      --bg-grid-speed: 45s;
-      --bg-parallax-speed: 60s;
-      --bg-beam-speed: 24s;
-      --bg-glow-a: rgba(22,179,120,.22);
-      --bg-glow-b: rgba(22,179,120,.16);
-      --grid-h: rgba(255,255,255,.06);
-      --grid-v: rgba(255,255,255,.06);
-      --beam-color: rgba(22,179,120,.12);
-      --beam-blur: 12px;
     }
 
     *{box-sizing:border-box}
@@ -67,55 +51,50 @@
       overflow-x:hidden;
     }
 
-    /* ===== Слой 1: мягкие зелёные «свечения» с параллаксом ===== */
+    /* ===== Плавный «живой» фон =====
+       Слой 1 (ниже): мягкие радиальные свечения, очень медленная параллакс-анимация.
+       Слой 2 (выше): тонкая сетка + лёгкий дрейф фона (background-position).
+    */
     body::after{
       content:"";
       position:fixed; inset:-15%;
-      z-index:0; pointer-events:none;
+      z-index:-3; pointer-events:none;
       background:
         radial-gradient(1100px 720px at 110% -10%, var(--bg-glow-a), transparent 60%),
         radial-gradient(900px 600px at -8% 120%,  var(--bg-glow-b), transparent 60%);
       filter: blur(18px);
-      animation: parallax var(--bg-parallax-speed) linear infinite;
+      /* параллакс — очень медленный, без рывков и без изменения прозрачности */
+      animation-name: parallax;
+      animation-duration: var(--bg-parallax-speed);
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
     }
     @keyframes parallax{
       0%   { transform: translate3d(0,0,0) rotate(0deg)   scale(1.02); }
-      50%  { transform: translate3d(14px,-10px,0) rotate(180deg) scale(1.02); }
+      50%  { transform: translate3d(12px,-8px,0) rotate(180deg) scale(1.02); }
       100% { transform: translate3d(0,0,0) rotate(360deg) scale(1.02); }
     }
 
-    /* ===== Слой 2: тонкая «сетка» с медленным дрейфом ===== */
     body::before{
       content:"";
       position:fixed; inset:-10%;
-      z-index:1; pointer-events:none;
+      z-index:-2; pointer-events:none;
       background:
         repeating-linear-gradient(0deg,  var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
         repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size));
       background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
-      animation: gridDrift var(--bg-grid-speed) linear infinite;
+      /* очень медленный дрейф сетки */
+      animation-name: gridDrift;
+      animation-duration: var(--bg-grid-speed);
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
     }
     @keyframes gridDrift{
       0%   { background-position: 0 0, 0 0; }
       100% { background-position: 0 calc(-1 * var(--grid-size)), calc(-1 * var(--grid-size)) 0; }
     }
 
-    /* ===== Слой 3: диагональный «луч» (широкая мягкая полоска) ===== */
-    .bg-beam{
-      position:fixed; inset:-20%;
-      z-index:2; pointer-events:none;
-      background: linear-gradient(130deg, transparent 40%, var(--beam-color) 50%, transparent 60%);
-      background-size: 200% 200%;
-      filter: blur(var(--beam-blur));
-      animation: beamSlide var(--bg-beam-speed) ease-in-out infinite;
-    }
-    @keyframes beamSlide{
-      0%   { background-position: 0% 0%;    transform: translate3d(0,0,0); }
-      50%  { background-position: 100% 100%; transform: translate3d(8px,-8px,0); }
-      100% { background-position: 0% 0%;    transform: translate3d(0,0,0); }
-    }
-
-    .wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px; position:relative; z-index:3;}
+    .wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px}
 
     /* ---------- Header ---------- */
     .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px}
@@ -135,13 +114,13 @@
       animation: fadeIn var(--fade-dur) var(--fade-ease) both;
       animation-delay: var(--delay, 0ms);
 
-      /* на наведении — лёгкое изменение фона/границы */
+      /* на наведении — только лёгкое изменение фона/границы */
       transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
     }
     @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
     .card:hover{
-      background:linear-gradient(180deg, rgba(22,179,120,.08), rgba(61,217,163,.03));
+      background:linear-gradient(180deg, rgba(22,179,120,.06), rgba(61,217,163,.02));
       border-color:#2d3647;
     }
 
@@ -151,15 +130,15 @@
 
     .badge{
       display:inline-flex; align-items:center; gap:8px;
-      background:rgba(22,179,120,.16);
+      background:rgba(22,179,120,.14);
       color:#b9ffe7;
-      border:1px solid rgba(22,179,120,.45);
+      border:1px solid rgba(22,179,120,.42);
       padding:8px 11px; border-radius:999px; font-weight:600; font-size:13px; text-decoration:none;
       transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
     }
     .badge:hover{
-      background:rgba(22,179,120,.20);
-      border-color:rgba(22,179,120,.55);
+      background:rgba(22,179,120,.18);
+      border-color:rgba(22,179,120,.52);
     }
     .badge:focus-visible{ outline:0; box-shadow:0 0 0 6px var(--selection); }
     .ext{ width:16px; height:16px; display:inline-block; }
@@ -169,27 +148,19 @@
 
     .empty{opacity:.8; color:var(--muted); text-align:center; padding:26px}
 
-    /* Reduce Motion уважаем, но можно форсировать классом .force-motion */
+    /* Системная настройка «уменьшить движение» */
     @media (prefers-reduced-motion: reduce){
-      body:not(.force-motion)::after,
-      body:not(.force-motion)::before,
-      body:not(.force-motion) .bg-beam,
-      body:not(.force-motion) .card{
-        animation: none !important;
-      }
-      body:not(.force-motion) .card{ opacity:1 !important }
-      body:not(.force-motion) .badge, body:not(.force-motion) .card{ transition: none !important }
+      body::after, body::before{ animation: none !important }
+      .card{ animation: none !important; opacity:1 !important }
+      .badge, .card{ transition: none !important }
     }
   </style>
 </head>
 <body>
-  <!-- Слой 3: диагональный луч -->
-  <div class="bg-beam" aria-hidden="true"></div>
-
   <div class="wrapper">
     <div class="topbar">
       <div class="title">Team directory</div>
-      <!-- никаких футеров/ссылок -->
+      <!-- никаких футеров/ссылок, как просил -->
     </div>
 
     <div id="grid" class="grid" aria-live="polite"></div>
@@ -229,12 +200,6 @@
       linkPolicy: {
         enforceEmbed: true,         // добавлять embed=true для docs.getgrist.com
         enforceStyle: 'light'       // если параметр style отсутствует — подставить 'light'
-      },
-
-      /* RU: Настройки движения фона */
-      motion: {
-        level: 'vivid',             // 'calm' | 'vivid' (по твоей просьбе — заметнее)
-        force: false                // true = игнорировать системный Reduce Motion
       },
 
       /* RU: Демоданные — если запустить вне Grist */
@@ -376,27 +341,11 @@
     }
 
     // =======================
-    //  Инициализация + управление режимом движения
+    //  Инициализация
     // =======================
     (function init(){
-      // RU: читаем параметр ?motion=calm|vivid|on
-      try {
-        const qs = new URLSearchParams(location.search);
-        const m = (qs.get('motion') || '').toLowerCase();
-        if (m === 'vivid' || m === 'calm') CONFIG.motion.level = m;
-        if (m === 'on' || m === 'vivid') CONFIG.motion.force = true;
-      } catch(e){}
-
-      // RU: применяем режимы к body
-      document.body.classList.add(`motion-${CONFIG.motion.level || 'calm'}`);
-      if (CONFIG.motion.force) document.body.classList.add('force-motion');
-
       if(!window.grist){
-        const demo = CONFIG.demoData && CONFIG.demoData.length ? CONFIG.demoData : [
-          {name:'Phil',   role:'Media Buyer', link:'#'},
-          {name:'Tien',   role:'Media Buyer', link:'#'},
-          {name:'Thomas', role:'Team Lead',   link:'#'}
-        ];
+        const demo = CONFIG.demoData && CONFIG.demoData.length ? CONFIG.demoData : [];
         render(demo);
         return;
       }
