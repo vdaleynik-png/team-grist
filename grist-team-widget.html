@@ -1,87 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Team Directory — Grist Widget</title>
-
-
-<!-- Grist Plugin API -->
-<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
-
-
-<!-- Font (optional) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-
-<style>
-:root{
---bg:#0f1116; --panel:#151922; --panel-2:#1b2230; --text:#e7ecf2; --muted:#8b96a9;
---accent: var(--grist-primary-fg, #16B378);
---selection: var(--grist-color-selection, rgba(22,179,120,.15));
---fade-dur: 420ms; --fade-ease: cubic-bezier(.2,.8,.2,1); --fade-stagger: 60ms; --hover-dur: 180ms;
---bg-grid-speed: 120s; --bg-parallax-speed: 160s; --bg-glow-a: rgba(22,179,120,.14); --bg-glow-b: rgba(22,179,120,.10);
---grid-h: rgba(255,255,255,.028); --grid-v: rgba(255,255,255,.030); --grid-size: 72px;
-}
-
-
-*{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:var(--text); background: var(--bg); overflow-x:hidden}
-
-
-/* Soft animated background (glows + grid) */
-body::after{content:""; position:fixed; inset:-15%; z-index:-3; pointer-events:none; background:
-radial-gradient(1100px 720px at 110% -10%, var(--bg-glow-a), transparent 60%),
-radial-gradient(900px 600px at -8% 120%, var(--bg-glow-b), transparent 60%);
-filter: blur(18px); animation: parallax var(--bg-parallax-speed) linear infinite}
-@keyframes parallax{0%{transform:translate3d(0,0,0) rotate(0) scale(1.02)}50%{transform:translate3d(12px,-8px,0) rotate(180deg) scale(1.02)}100%{transform:translate3d(0,0,0) rotate(360deg) scale(1.02)}}
-
-
-body::before{content:""; position:fixed; inset:-10%; z-index:-2; pointer-events:none; background:
-repeating-linear-gradient(0deg, var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
-repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size));
-background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
-animation: gridDrift var(--bg-grid-speed) linear infinite}
-@keyframes gridDrift{0%{background-position:0 0,0 0}100%{background-position:0 calc(-1 * var(--grid-size)), calc(-1 * var(--grid-size)) 0}}
-
-
-.wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px}
-.topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px}
-.title{font-size:22px; font-weight:700; letter-spacing:.2px}
-
-
-.grid{display:grid; grid-template-columns:repeat(12,1fr); gap:14px}
-
-
-.card{grid-column:span 12; position:relative; overflow:hidden; background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); border:1px solid #232a37; border-radius:18px; padding:18px; opacity:0; animation:fadeIn var(--fade-dur) var(--fade-ease) both; animation-delay:var(--delay,0ms); transition:background var(--hover-dur) ease, border-color var(--hover-dur) ease; contain: content}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.card:hover{background:linear-gradient(180deg, rgba(22,179,120,.06), rgba(61,217,163,.02)); border-color:#2d3647}
-
-
-.row{display:grid; grid-template-columns:1.6fr 1.4fr auto; align-items:center; gap:12px}
-.name{font-weight:600; font-size:16px}
-.role{color:var(--muted)}
-
-
-.badge{display:inline-flex; align-items:center; gap:8px; background:rgba(22,179,120,.14); color:#b9ffe7; border:1px solid rgba(22,179,120,.42); padding:8px 11px; border-radius:999px; font-weight:600; font-size:13px; text-decoration:none; transition:background var(--hover-dur) ease, border-color var(--hover-dur) ease}
-.badge:hover{background:rgba(22,179,120,.18); border-color:rgba(22,179,120,.52)}
-.badge:focus-visible{outline:0; box-shadow:0 0 0 6px var(--selection)}
-.ext{width:16px; height:16px; display:inline-block}
-
-
-@media (min-width:700px){.card{grid-column:span 6}}
-@media (min-width:980px){.card{grid-column:span 4}}
-
-
-.empty{opacity:.8; color:var(--muted); text-align:center; padding:26px}
-@media (prefers-reduced-motion: reduce){body::after,body::before{animation:none!important}.card{animation:none!important;opacity:1!important}.badge,.card{transition:none!important}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Directory Widget</title>
+  <!-- Load Grist Custom Widget API -->
+  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  <style>
+    /* Basic reset and typography */
+    body { margin: 0; padding: 10px; background: #fff; color: #333; font-family: sans-serif; }
+    /* Container for cards */
+    #card-list { display: flex; flex-direction: column; gap: 10px; }
+    /* Message (Loading/No data) text */
+    #message { color: #555; font-style: italic; padding: 8px 0; }
+    /* Card styling */
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 8px 12px;
+      background: #fdfdfd;
+      transition: background 0.3s ease;
+    }
+    .card:hover { background: #f8f8f8; }
+    /* Name and role text */
+    .name { font-weight: bold; font-size: 1.0em; }
+    .role { color: #666; font-size: 0.9em; margin: 2px 0 8px; }
+    /* Link badge styling */
+    .workspace-link {
+      display: inline-block;
+      text-decoration: none;
+      background: #eaeaea;
+      color: #333;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 0.85em;
+      white-space: nowrap;             /* keep text in one line */
+      transition: background 0.2s;
+    }
+    .workspace-link:hover, .workspace-link:focus {
+      background: #dcdcdc;
+      color: #000;
+    }
+    /* Reduce motion: disable transitions if user prefers no animation */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+  </style>
 </head>
 <body>
-<div class="wrapper">
-<div class="topbar">
-<div class="title">Team Directory</div>
+  <!-- Status/Message area -->
+  <div id="message">Loading…</div>
+  <!-- Container for cards -->
+  <div id="card-list"></div>
+
+  <script>
+    // Notify Grist that the widget is ready to receive data (request read-table access)
+    grist.ready({ requiredAccess: 'read table' });
+    // Utility: normalize a Grist document URL to the required embed format
+    function normalizeUrl(url) {
+      try {
+        const u = new URL(url);
+        if (u.hostname !== "docs.getgrist.com") return url;
+        // Ensure path has form /docId/slug, ignore any extra parts like /p/#
+        const parts = u.pathname.replace(/^\/|\/$/g, "").split("/");
+        if (parts.length < 2) return url;
+        const [docId, slug] = parts;
+        return `https://docs.getgrist.com/${docId}/${slug}/p/10?embed=true&style=singlePage`;
+      } catch (e) {
+        return url;
+      }
+    }
+    // Subscribe to all records in the Buyers table
+    grist.onRecords(function(records) {
+      const messageEl = document.getElementById('message');
+      const listEl = document.getElementById('card-list');
+      // If no records, show "No data found"
+      if (!records || records.length === 0) {
+        messageEl.textContent = "No data found.";
+        messageEl.style.display = "block";
+        listEl.innerHTML = "";  // clear any existing cards
+        return;
+      }
+      // We have data records; hide the "Loading…"/empty message
+      messageEl.style.display = "none";
+      listEl.innerHTML = "";  // clear previous entries
+      // Create a card for each record
+      for (const rec of records) {
+        // Create card container
+        const card = document.createElement('div');
+        card.className = "card";
+        // Name element
+        const nameDiv = document.createElement('div');
+        nameDiv.className = "name";
+        nameDiv.textContent = rec.Staff ?? "";   // staff name
+        card.appendChild(nameDiv);
+        // Role element
+        const roleDiv = document.createElement('div');
+        roleDiv.className = "role";
+        roleDiv.textContent = rec.Role ?? "";    // role text
+        card.appendChild(roleDiv);
+        // Link badge element
+        const link = document.createElement('a');
+        link.className = "workspace-link";
+        link.textContent = "Open Workspace";
+        // Normalize and set the hyperlink URL
+        const url = rec.Workspace_URL || "";
+        link.href = normalizeUrl(url);
+        link.target = "_blank"; 
+        link.rel = "noopener noreferrer";
+        card.appendChild(link);
+        // Append this card to the list
+        listEl.appendChild(card);
+      }
+    });
+  </script>
+</body>
 </html>
