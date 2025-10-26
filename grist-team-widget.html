@@ -6,7 +6,7 @@
   <title>Team Directory — Grist Widget (Optimized)</title>
 
   <!-- Grist Plugin API -->
-  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  <script src="https://vn-branch.getgrist.com/grist-plugin-api.js"></script>
 
   <!-- Font (optional) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -63,7 +63,7 @@
 <body>
   <div class="wrapper">
     <div class="topbar">
-      <div class="title">Team Directory</div>
+      <div class="title">Team directory</div>
     </div>
     <div id="grid" class="grid" aria-live="polite"></div>
   </div>
@@ -92,8 +92,8 @@
   // =======================
   const CONFIG = {
     columns: { name: 'Staff', role: 'Role', link: 'Workspace_URL' },
-    // embed=true запрещён; оставляем только style=singlePage
-    linkPolicy: { enforceStyle: 'singlePage' },
+    // запрещены любые query-параметры; оставляем чистый путь без ? и #
+    linkPolicy: null,
     // рендер крупными порциями, чтобы не лагало на больших списках
     renderChunk: 60,
     demoData: []
@@ -107,7 +107,7 @@
 
   // Кэш для санитайза URL, чтобы не парсить одно и то же по 100 раз
   const urlCache = new Map();
-  const ALLOWED_HOST = 'docs.getgrist.com';
+  const ALLOWED_HOST = 'vn-branch.getgrist.comt.com';
   const ALLOWED_PATH_RE = /^\/[A-Za-z0-9]+\/[^/]+\/p\/\d+$/; // /<docId>/<Page-Name>/p/<num>
 
   // Предкомпилированные регулярки
@@ -119,11 +119,9 @@
       const url = new URL(u);
       if (url.hostname !== ALLOWED_HOST) return '';
       if (!ALLOWED_PATH_RE.test(url.pathname)) return '';
-      // выпиливаем embed, если был
-      url.searchParams.delete('embed');
-      // оставляем style=singlePage
-      const style = CONFIG.linkPolicy?.enforceStyle || 'singlePage';
-      url.searchParams.set('style', style);
+      // удаляем любые query-параметры и хэши
+      url.search = '';
+      url.hash = '';
       return url.toString();
     }catch{ return ''; }
   }
@@ -275,4 +273,3 @@
   </script>
 </body>
 </html>
-
