@@ -301,11 +301,9 @@
       const allCols = Object.keys(obj || {});
       const cols = resolveColumns(allCols);
 
-      // Если колонка со ссылкой не пришла в виджет — подскажем пользователю
+      // Если колонка со ссылкой не пришла — просто предупреждаем, но ВСЁ РАВНО рендерим карточки без кнопки.
       if (!cols.link) {
-        console.warn('[Team Directory] Link column not found. Make sure "Workspace_URL" is added to Visible columns. Available columns:', allCols);
-        gridEl.innerHTML = '<div class="empty">Добавьте колонку <b>Workspace_URL</b> в "Visible columns" у виджета — тогда появятся кнопки "Open workspace".</div>';
-        return;
+        console.warn('[Team Directory] Link column not found. Add "Workspace_URL" to Visible columns to enable buttons. Available columns:', allCols);
       }
 
       const data = rows.map(r => mapRow(r, cols));
