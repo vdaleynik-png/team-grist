@@ -53,8 +53,7 @@
 
     /* ===== Плавный «живой» фон =====
        Слой 1 (ниже): мягкие радиальные свечения, очень медленная параллакс-анимация.
-       Слой 2 (выше): тонкая сетка + лёгкий дрейф фона (background-position).
-    */
+       Слой 2 (выше): тонкая сетка + лёгкий дрейф фона. */
     body::after{
       content:"";
       position:fixed; inset:-15%;
@@ -63,11 +62,7 @@
         radial-gradient(1100px 720px at 110% -10%, var(--bg-glow-a), transparent 60%),
         radial-gradient(900px 600px at -8% 120%,  var(--bg-glow-b), transparent 60%);
       filter: blur(18px);
-      /* параллакс — очень медленный, без рывков и без изменения прозрачности */
-      animation-name: parallax;
-      animation-duration: var(--bg-parallax-speed);
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
+      animation: parallax var(--bg-parallax-speed) linear infinite;
     }
     @keyframes parallax{
       0%   { transform: translate3d(0,0,0) rotate(0deg)   scale(1.02); }
@@ -83,11 +78,7 @@
         repeating-linear-gradient(0deg,  var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
         repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size));
       background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
-      /* очень медленный дрейф сетки */
-      animation-name: gridDrift;
-      animation-duration: var(--bg-grid-speed);
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
+      animation: gridDrift var(--bg-grid-speed) linear infinite;
     }
     @keyframes gridDrift{
       0%   { background-position: 0 0, 0 0; }
@@ -114,8 +105,9 @@
       animation: fadeIn var(--fade-dur) var(--fade-ease) both;
       animation-delay: var(--delay, 0ms);
 
-      /* на наведении — только лёгкое изменение фона/границы */
+      /* на наведении — только лёгкая смена фона/границы */
       transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
+      contain: content;
     }
     @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
@@ -136,10 +128,7 @@
       padding:8px 11px; border-radius:999px; font-weight:600; font-size:13px; text-decoration:none;
       transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
     }
-    .badge:hover{
-      background:rgba(22,179,120,.18);
-      border-color:rgba(22,179,120,.52);
-    }
+    .badge:hover{ background:rgba(22,179,120,.18); border-color:rgba(22,179,120,.52); }
     .badge:focus-visible{ outline:0; box-shadow:0 0 0 6px var(--selection); }
     .ext{ width:16px; height:16px; display:inline-block; }
 
@@ -199,7 +188,7 @@
       /* RU: Политика обработки ссылок */
       linkPolicy: {
         enforceEmbed: true,         // добавлять embed=true для docs.getgrist.com
-        enforceStyle: 'light'       // если параметр style отсутствует — подставить 'light'
+        enforceStyle: null          // НЕ трогаем style (оставляем твоё singlePage)
       },
 
       /* RU: Демоданные — если запустить вне Grist */
@@ -259,7 +248,7 @@
         const url = new URL(u);
         if (CONFIG.linkPolicy?.enforceEmbed && /(^|\.)docs\.getgrist\.com$/i.test(url.hostname)) {
           if (!url.searchParams.has('embed')) url.searchParams.set('embed','true');
-          const style = CONFIG.linkPolicy.enforceStyle;
+          const style = CONFIG.linkPolicy.enforceStyle; // null — не трогаем
           if (style && !url.searchParams.has('style')) url.searchParams.set('style', style);
           u = url.toString();
         }
