@@ -2,117 +2,315 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team Directory Widget</title>
-  <!-- Load Grist Custom Widget API -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Team Directory — Grist Widget</title>
+
+  <!-- Grist Plugin API -->
   <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+
+  <!-- Font (optional) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
-    /* Basic reset and typography */
-    body { margin: 0; padding: 10px; background: #fff; color: #333; font-family: sans-serif; }
-    /* Container for cards */
-    #card-list { display: flex; flex-direction: column; gap: 10px; }
-    /* Message (Loading/No data) text */
-    #message { color: #555; font-style: italic; padding: 8px 0; }
-    /* Card styling */
-    .card {
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 8px 12px;
-      background: #fdfdfd;
-      transition: background 0.3s ease;
+    :root{
+      --bg:#0f1116;
+      --panel:#151922;
+      --panel-2:#1b2230;
+      --text:#e7ecf2;
+      --muted:#8b96a9;
+      --accent: var(--grist-primary-fg, #16B378);
+      --accent-weak: var(--grist-color-lighter-green, #B1FFE2);
+      --selection: var(--grist-color-selection, rgba(22,179,120,.15));
+      --fade-dur: 420ms; --fade-ease: cubic-bezier(.2,.8,.2,1); --fade-stagger: 60ms;
+      --hover-dur: 180ms;
+      --bg-grid-speed: 120s; --bg-parallax-speed: 160s;
+      --bg-glow-a: rgba(22,179,120,.14); --bg-glow-b: rgba(22,179,120,.10);
+      --grid-h: rgba(255,255,255,.028); --grid-v: rgba(255,255,255,.030);
+      --grid-size: 72px;
     }
-    .card:hover { background: #f8f8f8; }
-    /* Name and role text */
-    .name { font-weight: bold; font-size: 1.0em; }
-    .role { color: #666; font-size: 0.9em; margin: 2px 0 8px; }
-    /* Link badge styling */
-    .workspace-link {
-      display: inline-block;
-      text-decoration: none;
-      background: #eaeaea;
-      color: #333;
-      padding: 3px 8px;
-      border-radius: 3px;
-      font-size: 0.85em;
-      white-space: nowrap;             /* keep text in one line */
-      transition: background 0.2s;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color:var(--text); background: var(--bg); overflow-x:hidden;
     }
-    .workspace-link:hover, .workspace-link:focus {
-      background: #dcdcdc;
-      color: #000;
+    body::after{
+      content:""; position:fixed; inset:-15%; z-index:-3; pointer-events:none;
+      background:
+        radial-gradient(1100px 720px at 110% -10%, var(--bg-glow-a), transparent 60%),
+        radial-gradient(900px 600px at -8% 120%, var(--bg-glow-b), transparent 60%);
+      filter: blur(18px);
+      animation: parallax var(--bg-parallax-speed) linear infinite;
     }
-    /* Reduce motion: disable transitions if user prefers no animation */
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { transition: none !important; animation: none !important; }
+    @keyframes parallax{
+      0% { transform: translate3d(0,0,0) rotate(0deg) scale(1.02); }
+      50% { transform: translate3d(12px,-8px,0) rotate(180deg) scale(1.02); }
+      100% { transform: translate3d(0,0,0) rotate(360deg) scale(1.02); }
+    }
+    body::before{
+      content:""; position:fixed; inset:-10%; z-index:-2; pointer-events:none;
+      background:
+        repeating-linear-gradient(0deg, var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
+        repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size));
+      background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
+      animation: gridDrift var(--bg-grid-speed) linear infinite;
+    }
+    @keyframes gridDrift{
+      0% { background-position: 0 0, 0 0; }
+      100% { background-position: 0 calc(-1 * var(--grid-size)), calc(-1 * var(--grid-size)) 0; }
+    }
+
+    .wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px}
+    .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px}
+    .title{font-size:22px; font-weight:700; letter-spacing:.2px}
+
+    .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:14px}
+    .card{
+      grid-column: span 12; position:relative; overflow:hidden;
+      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+      border:1px solid #232a37; border-radius:18px; padding:18px; opacity:0;
+      animation: fadeIn var(--fade-dur) var(--fade-ease) both; animation-delay: var(--delay, 0ms);
+      transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease; contain: content;
+    }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .card:hover{ background:linear-gradient(180deg, rgba(22,179,120,.06), rgba(61,217,163,.02)); border-color:#2d3647; }
+
+    .row{display:grid; grid-template-columns:1.6fr 1.4fr auto; align-items:center; gap:12px}
+    .name{font-weight:600; font-size:16px}
+    .role{color:var(--muted)}
+
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      background:rgba(22,179,120,.14); color:#b9ffe7; border:1px solid rgba(22,179,120,.42);
+      padding:8px 11px; border-radius:999px; font-weight:600; font-size:13px; text-decoration:none;
+      transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
+    }
+    .badge:hover{ background:rgba(22,179,120,.18); border-color:rgba(22,179,120,.52); }
+    .badge:focus-visible{ outline:0; box-shadow:0 0 0 6px var(--selection); }
+    .ext{ width:16px; height:16px; display:inline-block; }
+
+    @media (min-width:700px){ .card{ grid-column: span 6 } }
+    @media (min-width:980px){ .card{ grid-column: span 4 } }
+
+    .empty{opacity:.8; color:var(--muted); text-align:center; padding:26px}
+
+    @media (prefers-reduced-motion: reduce){
+      body::after, body::before{ animation: none !important }
+      .card{ animation: none !important; opacity:1 !important }
+      .badge, .card{ transition: none !important }
     }
   </style>
 </head>
 <body>
-  <!-- Status/Message area -->
-  <div id="message">Loading…</div>
-  <!-- Container for cards -->
-  <div id="card-list"></div>
+  <div class="wrapper">
+    <div class="topbar">
+      <div class="title">Team directory</div>
+      <!-- no footer/help, no search/sort -->
+    </div>
+    <div id="grid" class="grid" aria-live="polite"></div>
+  </div>
+
+  <!-- Card template -->
+  <template id="cardTpl">
+    <div class="card">
+      <div class="row">
+        <div class="name"></div>
+        <div class="role"></div>
+        <a class="badge" href="#" aria-label="Open workspace">
+          <svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          Open workspace
+        </a>
+      </div>
+    </div>
+  </template>
 
   <script>
-    // Notify Grist that the widget is ready to receive data (request read-table access)
-    grist.ready({ requiredAccess: 'read table' });
-    // Utility: normalize a Grist document URL to the required embed format
-    function normalizeUrl(url) {
-      try {
-        const u = new URL(url);
-        if (u.hostname !== "docs.getgrist.com") return url;
-        // Ensure path has form /docId/slug, ignore any extra parts like /p/#
-        const parts = u.pathname.replace(/^\/|\/$/g, "").split("/");
-        if (parts.length < 2) return url;
-        const [docId, slug] = parts;
-        return `https://docs.getgrist.com/${docId}/${slug}/p/10?embed=true&style=singlePage`;
-      } catch (e) {
-        return url;
+  // =======================
+  // CONFIG
+  // =======================
+  const CONFIG = {
+    // RU: фиксируем имена колонок под твою таблицу
+    columns: {
+      name: 'Staff',
+      role: 'Role',
+      link: 'Workspace_URL'   // <— было Workspace_link
+    },
+    // RU: ничего не навязываем страницам Grist (оставляем твой style=singlePage)
+    linkPolicy: { enforceEmbed: true, enforceStyle: 'singlePage' },
+    demoData: []
+  };
+
+  // ---------- utils ----------
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const normalizeId = (s) => (s||'').toString().replace(/^\$/,'');
+
+  // RU: строгая проверка, что это допустимая Grist-ссылка именно нужного вида
+  const ALLOWED_HOST = 'docs.getgrist.com';
+  // /<docId>/<Page-Name>/p/<num>
+  const ALLOWED_PATH_RE = /^\/[A-Za-z0-9]+\/[^/]+\/p\/\d+$/;
+
+  function toStrictGristUrl(u){
+    try{
+      const url = new URL(u);
+      if (url.hostname !== ALLOWED_HOST) return '';
+      if (!ALLOWED_PATH_RE.test(url.pathname)) return '';
+
+      // Насильно ставим параметры embed=true&style=singlePage
+      url.searchParams.set('embed','true');
+      url.searchParams.set('style','singlePage');
+      return url.toString();
+    }catch(e){
+      return '';
+    }
+  }
+
+  // RU: извлекаем URL из разных форматов ячейки (HyperLink / Markdown / <a> / plain)
+  function extractUrl(val){
+    if (!val) return '';
+    if (typeof val === 'object') {
+      const u = val.url || val.href || val.link || '';
+      return sanitizeUrl(u);
+    }
+    const s = String(val).trim();
+    const md = s.match(/\[[^\]]*\]\(([^)]+)\)/);
+    if (md && md[1]) return sanitizeUrl(md[1]);
+    const ah = s.match(/href\s*=\s*["']([^"']+)["']/i);
+    if (ah && ah[1]) return sanitizeUrl(ah[1]);
+    return sanitizeUrl(s);
+  }
+
+  // RU: нормализуем и, при необходимости, чутка подправляем URL
+  function sanitizeUrl(raw){
+    if (!raw) return '';
+    let u = String(raw).trim();
+
+    // fix https:/  →  https://
+    u = u.replace(/^(https?):\/(?!\/)/i, (_,p) => `${p}://`);
+
+    // без схемы → https://
+    if (!/^[a-z]+:\/\//i.test(u)) {
+      if (/^docs\.getgrist\.com\b/i.test(u) || /^[a-z0-9.-]+\.[a-z]{2,}\b/i.test(u)) {
+        u = 'https://' + u;
       }
     }
-    // Subscribe to all records in the Buyers table
-    grist.onRecords(function(records) {
-      const messageEl = document.getElementById('message');
-      const listEl = document.getElementById('card-list');
-      // If no records, show "No data found"
-      if (!records || records.length === 0) {
-        messageEl.textContent = "No data found.";
-        messageEl.style.display = "block";
-        listEl.innerHTML = "";  // clear any existing cards
+
+    // отсечь потенциально опасные схемы
+    if (/^\s*javascript:/i.test(u) || /^\s*data:/i.test(u)) return '';
+
+    // Строгое правило: допускаем ТОЛЬКО нужный формат Grist
+    const strict = toStrictGristUrl(u);
+    return strict; // если не прошло — будет пустая строка ⇒ ссылки не будет
+  }
+
+  const isGristLink = (u) => {
+    try { return new URL(u).hostname === ALLOWED_HOST } catch { return false }
+  };
+
+  // RU: для ссылок на Grist — навигация в ту же вкладку (родитель), иначе — новое окно.
+  function openLink(u){
+    if(!u) return;
+    try{
+      if(isGristLink(u) && window.top){
+        window.top.location.assign(u);
         return;
       }
-      // We have data records; hide the "Loading…"/empty message
-      messageEl.style.display = "none";
-      listEl.innerHTML = "";  // clear previous entries
-      // Create a card for each record
-      for (const rec of records) {
-        // Create card container
-        const card = document.createElement('div');
-        card.className = "card";
-        // Name element
-        const nameDiv = document.createElement('div');
-        nameDiv.className = "name";
-        nameDiv.textContent = rec.Staff ?? "";   // staff name
-        card.appendChild(nameDiv);
-        // Role element
-        const roleDiv = document.createElement('div');
-        roleDiv.className = "role";
-        roleDiv.textContent = rec.Role ?? "";    // role text
-        card.appendChild(roleDiv);
-        // Link badge element
-        const link = document.createElement('a');
-        link.className = "workspace-link";
-        link.textContent = "Open Workspace";
-        // Normalize and set the hyperlink URL
-        const url = rec.Workspace_URL || "";
-        link.href = normalizeUrl(url);
-        link.target = "_blank"; 
-        link.rel = "noopener noreferrer";
-        card.appendChild(link);
-        // Append this card to the list
-        listEl.appendChild(card);
+    }catch(e){}
+    window.open(u, '_blank', 'noopener');
+  }
+
+  // RU: сопоставляем ID колонок
+  function resolveColumns(allKeys){
+    const keys = allKeys.map(k => k.toString());
+    const lc = keys.map(k => k.toLowerCase());
+    const want = {
+      name: normalizeId(CONFIG.columns.name),
+      role: normalizeId(CONFIG.columns.role),
+      link: normalizeId(CONFIG.columns.link)
+    };
+    const out = {name:null, role:null, link:null};
+    for(const k of ['name','role','link']){
+      if(!want[k]) continue;
+      const idx = lc.indexOf(want[k].toLowerCase());
+      if(idx>-1) out[k] = keys[idx];
+    }
+    const pick = (cur, cands) => {
+      if(cur) return cur;
+      for(const cand of cands){
+        let i = lc.indexOf(cand.toLowerCase());
+        if(i>-1) return keys[i];
+        i = lc.findIndex(x => x.includes(cand.toLowerCase()));
+        if(i>-1) return keys[i];
       }
+      return null;
+    };
+    return {
+      name: pick(out.name, ['staff','name','employee']),
+      role: pick(out.role, ['role','title','position']),
+      // добавил 'workspace_url' как приоритетный синоним
+      link: pick(out.link, ['workspace_url','workspace_link','workspace','link','url'])
+    };
+  }
+
+  function mapRow(row, cols){
+    const src = row.fields || row;
+    return {
+      name: src?.[cols.name] ?? '',
+      role: src?.[cols.role] ?? '',
+      link: extractUrl(src?.[cols.link])
+    };
+  }
+
+  function render(records){
+    const grid = $('#grid');
+    grid.innerHTML = '';
+    if(!records || !records.length){
+      grid.innerHTML = '<div class="empty">No data found</div>';
+      return;
+    }
+    const tpl = $('#cardTpl');
+    const frag = document.createDocumentFragment();
+    records.forEach((r, i) => {
+      const card = tpl.content.firstElementChild.cloneNode(true);
+      card.style.setProperty('--delay', `calc(${i} * var(--fade-stagger))`);
+      $('.name', card).textContent = r.name || '—';
+      $('.role', card).textContent = r.role || '';
+      const a = $('a.badge', card);
+      if(r.link){
+        a.addEventListener('click', (e)=>{ e.preventDefault(); openLink(r.link); });
+      } else {
+        a.remove();
+      }
+      frag.appendChild(card);
     });
+    grid.appendChild(frag);
+  }
+
+  // ---------- init ----------
+  (function init(){
+    if(!window.grist){
+      render(CONFIG.demoData || []);
+      return;
+    }
+    grist.ready({requiredAccess: 'read table'});
+    grist.onRecords((rows) => {
+      if(!rows || !rows.length){
+        render([]);
+        return;
+      }
+      const first = rows[0] || {};
+      const obj = first.fields || first;
+      const allCols = Object.keys(obj || {});
+      const cols = resolveColumns(allCols);
+      const data = rows.map(r => mapRow(r, cols));
+      render(data); // порядок как в таблице
+    });
+  })();
   </script>
 </body>
 </html>
