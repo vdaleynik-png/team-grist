@@ -8,78 +8,58 @@
   <!-- Grist Plugin API -->
   <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 
-  <!-- Font -->
+  <!-- Шрифт (можно убрать/заменить) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* ===== Grist-like theme ===== */
+      /* Базовая тема (в духе Grist) */
       --bg:#0f1116;
       --panel:#151922;
       --panel-2:#1b2230;
       --text:#e7ecf2;
       --muted:#8b96a9;
 
-      /* Accents (Grist fallbacks) */
+      /* Акценты Grist с фолбэками */
       --accent: var(--grist-primary-fg, #16B378);
       --accent-weak: var(--grist-color-lighter-green, #B1FFE2);
       --selection: var(--grist-color-selection, rgba(22,179,120,.15));
 
-      /* UI motion (cards only) */
+      /* Движение — мягкое и ненавязчивое */
       --fade-dur: 420ms;
       --fade-ease: cubic-bezier(.2,.8,.2,1);
-      --fade-stagger: 60ms;
       --hover-dur: 180ms;
-
-      /* static background colors */
-      --bg-glow-a: rgba(22,179,120,.14);
-      --bg-glow-b: rgba(22,179,120,.10);
-      --grid-h: rgba(255,255,255,.028);
-      --grid-v: rgba(255,255,255,.030);
-      --grid-size: 72px;
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;
-      font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      color:var(--text);
-      background: var(--bg);
+      margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color:var(--text); background: var(--bg);
       overflow-x:hidden;
-      position:relative;
     }
 
-    /* ===== Static background: soft green glows + thin grid (NO animations) ===== */
-    /* layer 1: glows */
-    body::after{
-      content:"";
-      position:fixed;
-      inset:-15%;
-      z-index:0;
-      pointer-events:none;
-      background:
-        radial-gradient(1100px 720px at 110% -10%, var(--bg-glow-a), transparent 60%),
-        radial-gradient(900px 600px at -8% 120%, var(--bg-glow-b), transparent 60%);
-      filter: blur(18px);
-    }
-
-    /* layer 2: grid (static) */
+    /* ====== Мягкий анимированный задник (сетка + зелёные свечения) ====== */
     body::before{
       content:"";
-      position:fixed;
-      inset:-10%;
-      z-index:-1;
-      pointer-events:none;
+      position:fixed; inset:-10%;
+      z-index:-2; pointer-events:none;
       background:
-        repeating-linear-gradient(0deg, var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
-        repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size));
-      background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
+        radial-gradient(1100px 720px at 110% -10%, rgba(22,179,120,.14), transparent 60%),
+        radial-gradient(900px 600px at -8% 120%, rgba(22,179,120,.10), transparent 60%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,.028) 0 1px, transparent 1px 72px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.030) 0 1px, transparent 1px 72px);
+      background-size:auto, auto, 72px 72px, 72px 72px;
+      animation: gridShift 140s linear infinite; /* очень медленно */
+    }
+    @keyframes gridShift{
+      0%   { background-position: 0 0, 100% 100%, 0 0, 0 0; }
+      100% { background-position: 240px 0, 85% 100%, 0 -72px, -72px 0; }
     }
 
-    .wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px; position:relative; z-index:1;}
+    .wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px}
 
     /* ---------- Header ---------- */
     .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px}
@@ -90,22 +70,24 @@
 
     .card{
       grid-column: span 12;
-      position:relative;
-      overflow:hidden;
+      position:relative; overflow:hidden;
       background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
-      border:1px solid #232a37;
-      border-radius:18px;
-      padding:18px;
-      /* soft fade-in only */
+      border:1px solid #232a37; border-radius:18px; padding:18px;
+
+      /* только мягкий fade‑in */
       opacity:0;
       animation: fadeIn var(--fade-dur) var(--fade-ease) both;
       animation-delay: var(--delay, 0ms);
+
+      /* hover — только лёгкая смена фона/границы */
       transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
     }
-
     @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-    .card:hover{ background:linear-gradient(180deg, rgba(22,179,120,.06), rgba(61,217,163,.02)); border-color:#2d3647; }
+    .card:hover{
+      background:linear-gradient(180deg, rgba(22,179,120,.06), rgba(61,217,163,.02));
+      border-color:#2d3647;
+    }
 
     .row{display:grid; grid-template-columns:1.6fr 1.4fr auto; align-items:center; gap:12px}
     .name{font-weight:600; font-size:16px}
@@ -113,31 +95,32 @@
 
     .badge{
       display:inline-flex; align-items:center; gap:8px;
-      background:rgba(22,179,120,.14); color:#b9ffe7;
+      background:rgba(22,179,120,.14);
+      color:#b9ffe7;
       border:1px solid rgba(22,179,120,.42);
-      padding:8px 11px; border-radius:999px;
-      font-weight:600; font-size:13px;
-      text-decoration:none; white-space:nowrap;
+      padding:8px 11px; border-radius:999px; font-weight:600; font-size:13px; text-decoration:none;
       transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
     }
-
-    .badge:hover{ background:rgba(22,179,120,.18); border-color:rgba(22,179,120,.52); }
+    .badge:hover{
+      background:rgba(22,179,120,.18);
+      border-color:rgba(22,179,120,.52);
+    }
     .badge:focus-visible{ outline:0; box-shadow:0 0 0 6px var(--selection); }
     .ext{ width:16px; height:16px; display:inline-block; }
 
     @media (min-width:700px){ .card{ grid-column: span 6 } }
     @media (min-width:980px){ .card{ grid-column: span 4 } }
 
-    .empty{
-      opacity:.9; color:var(--muted); text-align:center;
-      padding:26px; border:1px dashed #2a3140; border-radius:14px;
-      background:rgba(255,255,255,.015);
-    }
+    .empty{opacity:.8; color:var(--muted); text-align:center; padding:26px}
 
     @media (prefers-reduced-motion: reduce){
+      body::before{ animation: none !important }
       .card{ animation: none !important; opacity:1 !important }
       .badge, .card{ transition: none !important }
     }
+
+    .footer{margin-top:18px; color:var(--muted); font-size:12px; display:flex; justify-content:space-between; gap:10px}
+    .link{color:var(--accent); text-decoration:none}
   </style>
 </head>
 <body>
@@ -145,7 +128,13 @@
     <div class="topbar">
       <div class="title">Team directory</div>
     </div>
+
     <div id="grid" class="grid" aria-live="polite"></div>
+
+    <div class="footer">
+      <span>Powered by Grist</span>
+      <a class="link" target="_blank" href="https://support.getgrist.com/widget/">How to add a Custom Widget</a>
+    </div>
   </div>
 
   <!-- Card template -->
@@ -168,43 +157,53 @@
 
   <script>
     // =======================
-    // CONFIG
+    //  CONFIG
     // =======================
     const CONFIG = {
-      columns: { name: 'Staff', role: 'Role', link: 'Workspace_URL' }, // RU: ID колонок
-      linkPolicy: { enforceEmbed: true, enforceStyle: 'light' },
-      demoData: [
-        // Пример локальных данных (раскомментируйте для проверки вне Grist):
-        // { name: 'An Nguyen', role: 'PM', link: 'docs.getgrist.com/o/example?doc=Demo&tab=People' },
-        // { name: 'Lan Pham', role: 'QA', link: 'https://example.com' },
-      ]
+      /* RU: Жёстко задаём имена колонок по твоей таблице */
+      columns: {
+        name: 'Staff',
+        role: 'Role',
+        link: 'Workspace_URL'      // это ID колонки (без $)
+      },
+
+      /* RU: Политика обработки ссылок */
+      linkPolicy: {
+        enforceEmbed: true,         // добавлять embed=true для docs.getgrist.com
+        enforceStyle: 'light'       // если параметр style отсутствует — подставить 'light'
+      },
+
+      /* RU: Демоданные — если запустить вне Grist */
+      demoData: []
     };
 
     // =======================
-    // Utils
+    //  Утилиты
     // =======================
     const $ = (sel, root=document) => root.querySelector(sel);
-    const normalizeId = (s) => (s||'').toString().replace(/^\$/,''); // RU: убираем $ в начале ID
+    const normalizeId = (s) => (s||'').toString().replace(/^\$/,''); // убираем $ в начале ID
 
     // RU: безопасное извлечение URL из разных форматов ячейки
     function extractUrl(val){
       if (!val) return '';
-      // HyperLink объект: {url, label/text}
+
+      // 1) Объект HyperLink {url, label}
       if (typeof val === 'object') {
         const u = val.url || val.href || val.link || '';
         return sanitizeUrl(u);
       }
+
       const s = String(val).trim();
 
-      // Markdown: [label](url)
+      // 2) Markdown: [label](url)
       const md = s.match(/\[[^\]]*\]\(([^)]+)\)/);
       if (md && md[1]) return sanitizeUrl(md[1]);
 
-      // HTML: <a href="...">...</a>
+      // 3) HTML: <a href="...">...</a>
       const ah = s.match(/href\s*=\s*["']([^"']+)["']/i);
       if (ah && ah[1]) return sanitizeUrl(ah[1]);
 
-      // просто URL/домен
+      // 4) Просто URL/домен/путь
       return sanitizeUrl(s);
     }
 
@@ -213,10 +212,10 @@
       if (!raw) return '';
       let u = String(raw).trim();
 
-      // https:/ -> https://
+      // починка опечатки https:/ -> https://
       u = u.replace(/^(https?):\/(?!\/)/i, (_,p) => `${p}://`);
 
-      // если без схемы, но выглядит как домен — добавим https://
+      // если схема отсутствует, но строка похожа на домен docs.getgrist.com или любой домен — добавим https://
       if (!/^[a-z]+:\/\//i.test(u)) {
         if (/^docs\.getgrist\.com\b/i.test(u) || /^[a-z0-9.-]+\.[a-z]{2,}\b/i.test(u)) {
           u = 'https://' + u;
@@ -226,7 +225,7 @@
       // запрет опасных схем
       if (/^\s*javascript:/i.test(u) || /^\s*data:/i.test(u)) return '';
 
-      // auto embed/style для docs.getgrist.com
+      // добавить embed/style для docs.getgrist.com (если включено)
       try {
         const url = new URL(u);
         if (CONFIG.linkPolicy?.enforceEmbed && /(^|\.)docs\.getgrist\.com$/i.test(url.hostname)) {
@@ -236,12 +235,13 @@
           u = url.toString();
         }
       } catch(e){
-        // относительный путь — оставим как есть
+        // если new URL не справился (например, относительный путь) — оставим как есть
       }
+
       return u;
     }
 
-    // RU: сопоставление ID колонок (работает и с $Prefix)
+    // RU: сопоставление названий столбцов (ID)
     function resolveColumns(allKeys){
       const keys = allKeys.map(k => k.toString());
       const lc = keys.map(k => k.toLowerCase());
@@ -250,22 +250,22 @@
         role: normalizeId(CONFIG.columns.role),
         link: normalizeId(CONFIG.columns.link)
       };
-      const out = {name:null, role:null, link:null};
 
-      for (const k of ['name','role','link']){
-        if (!want[k]) continue;
-        const i = lc.indexOf(want[k].toLowerCase());
-        if (i>-1) out[k] = keys[i];
+      const out = {name:null, role:null, link:null};
+      for(const k of ['name','role','link']){
+        if(!want[k]) continue;
+        const idx = lc.indexOf(want[k].toLowerCase());
+        if(idx>-1) out[k] = keys[idx];
       }
 
       // fallback на подстрочный поиск
-      const pick = (cur, variants) => {
-        if (cur) return cur;
-        for (const v of variants){
-          let i = lc.indexOf(v.toLowerCase());
-          if (i>-1) return keys[i];
-          i = lc.findIndex(x => x.includes(v.toLowerCase()));
-          if (i>-1) return keys[i];
+      const pick = (cur, cands) => {
+        if(cur) return cur;
+        for(const cand of cands){
+          let i = lc.indexOf(cand.toLowerCase());
+          if(i>-1) return keys[i];
+          i = lc.findIndex(x => x.includes(cand.toLowerCase()));
+          if(i>-1) return keys[i];
         }
         return null;
       };
@@ -273,89 +273,63 @@
       return {
         name: pick(out.name, ['staff','name','employee']),
         role: pick(out.role, ['role','title','position']),
-        link: pick(out.link, ['workspace_url','workspace_link','workspace','link','url'])
+        link: pick(out.link, ['workspace_url','workspace','url'])
       };
     }
 
-    // RU: нормализация строки
+    // RU: нормализация одной строки таблицы
     function mapRow(row, cols){
-      const src = row?.fields ?? row ?? {};
-      return {
+      const src = row.fields || row;
+      const item = {
         name: src?.[cols.name] ?? '',
         role: src?.[cols.role] ?? '',
         link: extractUrl(src?.[cols.link])
       };
+      return item;
     }
 
-    // RU: рендер (через fragment)
+    // RU: рендерим пачкой через DocumentFragment (меньше перерисовок)
     function render(records){
       const grid = $('#grid');
       grid.innerHTML = '';
-
-      if (!records || !records.length){
-        grid.innerHTML = `
-          <div class="empty">
-            No data to display.
-            <div style="margin-top:6px;font-size:12px">
-              If you see this in Grist, check the widget access level (not <i>No document access</i>)
-              and that visible columns include <b>Staff</b>, <b>Role</b>, <b>Workspace_URL</b>.
-            </div>
-          </div>`;
+      if(!records || !records.length){
+        grid.innerHTML = `<div class="empty">No data found</div>`;
         return;
       }
-
       const tpl = $('#cardTpl');
       const frag = document.createDocumentFragment();
-
       records.forEach((r, i) => {
         const card = tpl.content.firstElementChild.cloneNode(true);
-        card.style.setProperty('--delay', `calc(${i} * var(--fade-stagger))`);
+        card.style.setProperty('--delay', `${i * 60}ms`);      // мягкий «стаггер» по непрозрачности
         $('.name', card).textContent = r.name || '—';
         $('.role', card).textContent = r.role || '';
-
         const a = $('a.badge', card);
-        if (r.link) {
-          a.href = r.link;
-        } else {
-          a.remove();
-        }
+        if(r.link){ a.href = r.link; } else { a.remove(); }
         frag.appendChild(card);
       });
       grid.appendChild(frag);
     }
 
     // =======================
-    // Init
+    //  Инициализация
     // =======================
     (function init(){
-      // Вне Grist — просто рендерим demoData (если задано)
-      if (!window.grist){
-        render(CONFIG.demoData && CONFIG.demoData.length ? CONFIG.demoData : []);
+      if(!window.grist){
+        const demo = CONFIG.demoData && CONFIG.demoData.length ? CONFIG.demoData : [];
+        render(demo);
         return;
       }
 
-      try{
-        grist.ready({requiredAccess: 'read table'});
-        grist.onRecords((rows) => {
-          try{
-            if (!rows || !rows.length) {
-              render([]);
-              return;
-            }
-            const first = rows[0] || {};
-            const obj = first.fields || first || {};
-            const cols = resolveColumns(Object.keys(obj));
-            const data = rows.map(r => mapRow(r, cols));
-            render(data); // порядок как в таблице, без сортировки
-          }catch(err){
-            console.error('Render error:', err);
-            render([]);
-          }
-        });
-      }catch(err){
-        console.error('Grist init error:', err);
-        render([]);
-      }
+      grist.ready({requiredAccess: 'read table'});
+      grist.onRecords((rows) => {
+        if(!rows || !rows.length){ render([]); return; }
+        const first = rows[0] || {};
+        const obj = first.fields || first;
+        const allCols = Object.keys(obj || {});
+        const cols = resolveColumns(allCols);
+        const data = rows.map(r => mapRow(r, cols));
+        render(data);  // порядок как в таблице, без сортировки
+      });
     })();
   </script>
 </body>
