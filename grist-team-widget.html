@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Team Directory — Grist Widget (Optimized)</title>
+  <title>Team Directory — Grist Widget</title>
 
-  <!-- Grist Plugin API -->
+  <!-- Grist Plugin API (branch) -->
   <script src="https://vn-branch.getgrist.com/grist-plugin-api.js"></script>
 
   <!-- Font (optional) -->
@@ -15,60 +15,50 @@
 
   <style>
     :root{
-      --bg:#0f1116; --panel:#151922; --panel-2:#1b2230;
-      --text:#e7ecf2; --muted:#8b96a9;
-      --accent: var(--grist-primary-fg, #16B378);
-      --accent-weak: var(--grist-color-lighter-green, #B1FFE2);
-      --selection: var(--grist-color-selection, rgba(22,179,120,.15));
-      --fade-dur: 420ms; --fade-ease: cubic-bezier(.2,.8,.2,1); --fade-stagger: 60ms;
-      --hover-dur: 180ms;
-      --bg-grid-speed: 120s; --bg-parallax-speed: 160s;
-      --bg-glow-a: rgba(22,179,120,.14); --bg-glow-b: rgba(22,179,120,.10);
-      --grid-h: rgba(255,255,255,.028); --grid-v: rgba(255,255,255,.030);
-      --grid-size: 72px;
+      --bg:#0f1116; --text:#e7ecf2; --muted:#8b96a9;
+      --selection: rgba(22,179,120,.15);
+      --fade-dur:420ms; --fade-ease:cubic-bezier(.2,.8,.2,1); --fade-stagger:60ms;
+      --hover-dur:180ms; --grid-size:72px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{ margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:var(--text); background:var(--bg); overflow-x:hidden; }
-    body::after{ content:""; position:fixed; inset:-15%; z-index:-3; pointer-events:none; background: radial-gradient(1100px 720px at 110% -10%, var(--bg-glow-a), transparent 60%), radial-gradient(900px 600px at -8% 120%, var(--bg-glow-b), transparent 60%); filter: blur(18px); animation: parallax var(--bg-parallax-speed) linear infinite; }
-    @keyframes parallax{ 0% { transform: translate3d(0,0,0) rotate(0deg) scale(1.02);} 50% { transform: translate3d(12px,-8px,0) rotate(180deg) scale(1.02);} 100% { transform: translate3d(0,0,0) rotate(360deg) scale(1.02);} }
-    body::before{ content:""; position:fixed; inset:-10%; z-index:-2; pointer-events:none; background: repeating-linear-gradient(0deg, var(--grid-h) 0 1px, transparent 1px var(--grid-size)), repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size)); background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size); animation: gridDrift var(--bg-grid-speed) linear infinite; }
-    @keyframes gridDrift{ 0% { background-position: 0 0, 0 0;} 100% { background-position: 0 calc(-1 * var(--grid-size)), calc(-1 * var(--grid-size)) 0;} }
-
-    .wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px}
-    .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px}
-    .title{font-size:22px; font-weight:700; letter-spacing:.2px}
-
-    .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:14px}
-    .card{ grid-column: span 12; position:relative; overflow:hidden; background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); border:1px solid #232a37; border-radius:18px; padding:18px; opacity:0; animation: fadeIn var(--fade-dur) var(--fade-ease) both; transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease; contain: content; }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-    .card:hover{ background:linear-gradient(180deg, rgba(22,179,120,.06), rgba(61,217,163,.02)); border-color:#2d3647; }
-
-    .row{display:grid; grid-template-columns:1.6fr 1.4fr auto; align-items:center; gap:12px}
-    .name{font-weight:600; font-size:16px}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:#0f1116;overflow-x:hidden}
+    body::after{content:"";position:fixed;inset:-15%;z-index:-3;pointer-events:none;background:
+      radial-gradient(1100px 720px at 110% -10%, rgba(22,179,120,.14), transparent 60%),
+      radial-gradient(900px 600px at -8% 120%, rgba(22,179,120,.10), transparent 60%);
+      filter:blur(18px);animation:parallax 160s linear infinite}
+    @keyframes parallax{0%{transform:translate3d(0,0,0) rotate(0) scale(1.02)}50%{transform:translate3d(12px,-8px,0) rotate(180deg) scale(1.02)}100%{transform:translate3d(0,0,0) rotate(360deg) scale(1.02)}}
+    body::before{content:"";position:fixed;inset:-10%;z-index:-2;pointer-events:none;background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.028) 0 1px, transparent 1px var(--grid-size)),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.030) 0 1px, transparent 1px var(--grid-size));
+      background-size:var(--grid-size) var(--grid-size);animation:gridDrift 120s linear infinite}
+    @keyframes gridDrift{0%{background-position:0 0,0 0}100%{background-position:0 calc(-1 * var(--grid-size)), calc(-1 * var(--grid-size)) 0}}
+    .wrapper{max-width:1100px;margin:0 auto;padding:28px 20px 40px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .title{font-size:22px;font-weight:700;letter-spacing:.2px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    .card{grid-column:span 12;position:relative;overflow:hidden;background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));border:1px solid #232a37;border-radius:18px;padding:18px;opacity:0;animation:fadeIn var(--fade-dur) var(--fade-ease) both;transition:background var(--hover-dur) ease, border-color var(--hover-dur) ease;contain:content}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .card:hover{background:linear-gradient(180deg, rgba(22,179,120,.06), rgba(61,217,163,.02));border-color:#2d3647}
+    .row{display:grid;grid-template-columns:1.6fr 1.4fr auto;align-items:center;gap:12px}
+    .name{font-weight:600;font-size:16px}
     .role{color:var(--muted)}
-
-    .badge{ display:inline-flex; align-items:center; gap:8px; background:rgba(22,179,120,.14); color:#b9ffe7; border:1px solid rgba(22,179,120,.42); padding:8px 11px; border-radius:999px; font-weight:600; font-size:13px; text-decoration:none; transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease; }
-    .badge:hover{ background:rgba(22,179,120,.18); border-color:rgba(22,179,120,.52); }
-    .badge:focus-visible{ outline:0; box-shadow:0 0 0 6px var(--selection); }
-    .ext{ width:16px; height:16px; display:inline-block; }
-
-    @media (min-width:700px){ .card{ grid-column: span 6 } }
-    @media (min-width:980px){ .card{ grid-column: span 4 } }
-    .empty{opacity:.8; color:var(--muted); text-align:center; padding:26px}
-
-    @media (prefers-reduced-motion: reduce){ body::after, body::before{ animation: none !important } .card{ animation: none !important; opacity:1 !important } .badge, .card{ transition: none !important } }
+    .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(22,179,120,.14);color:#b9ffe7;border:1px solid rgba(22,179,120,.42);padding:8px 11px;border-radius:999px;font-weight:600;font-size:13px;text-decoration:none;transition:background var(--hover-dur) ease,border-color var(--hover-dur) ease}
+    .badge:hover{background:rgba(22,179,120,.18);border-color:rgba(22,179,120,.52)}
+    .badge:focus-visible{outline:0;box-shadow:0 0 0 6px var(--selection)}
+    .ext{width:16px;height:16px;display:inline-block}
+    @media (min-width:700px){.card{grid-column:span 6}}
+    @media (min-width:980px){.card{grid-column:span 4}}
+    .empty{opacity:.8;color:var(--muted);text-align:center;padding:26px}
+    @media (prefers-reduced-motion:reduce){body::after,body::before{animation:none!important}.card{animation:none!important;opacity:1!important}.badge,.card{transition:none!important}}
   </style>
 </head>
 <body>
   <div class="wrapper">
-    <div class="topbar">
-      <div class="title">Team directory</div>
-    </div>
+    <div class="topbar"><div class="title">Team directory</div></div>
     <div id="grid" class="grid" aria-live="polite"></div>
   </div>
 
-  <!-- Card template -->
   <template id="cardTpl">
     <div class="card">
       <div class="row">
@@ -77,8 +67,7 @@
         <a class="badge" href="#" aria-label="Open workspace">
           <svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/>
-            <line x1="10" y1="14" x2="21" y2="3"/>
+            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
           </svg>
           <span class="badge-text">Open workspace</span>
         </a>
@@ -87,119 +76,91 @@
   </template>
 
   <script>
-  // =======================
-  // CONFIG
-  // =======================
+  // ------- Config -------
   const CONFIG = {
-    columns: { name: 'Staff', role: 'Role', link: 'Workspace' },
-    // разрешаем только `?style=singlePage`; `embed` и прочие параметры удаляем
-    linkPolicy: null,
-    // рендер крупными порциями, чтобы не лагало на больших списках
-    renderChunk: 60,
-    demoData: []
+    columns: { name: 'Staff', role: 'Role', link: 'Workspace' }, // берем ссылку из $Workspace
+    renderChunk: 60
   };
 
-  // ---------- utils ----------
-  const $ = (sel, root=document) => root.querySelector(sel);
-  const tpl = $('#cardTpl');
+  // ------- Utils -------
+  const $ = (s, r=document) => r.querySelector(s);
   const gridEl = $('#grid');
+  const tpl = $('#cardTpl');
   const normalizeId = (s) => (s||'').toString().replace(/^\$/,'');
+  const cache = new Map();
 
-  // Кэш для санитайза URL, чтобы не парсить одно и то же по 100 раз
-  const urlCache = new Map();
   const ALLOWED_HOST = 'vn-branch.getgrist.com';
-  const ALLOWED_PATH_RE = /^\/[A-Za-z0-9]+\/[^/]+\/p\/\d+$/; // /<docId>/<Page-Name>/p/<num> // /<docId>/<Page-Name>/p/<num>
-
-  // Предкомпилированные регулярки
-  const RE_MD_LINK = /\[[^\]]*\]\(([^)]+)\)/;
+  const ALLOWED_PATH_RE = /^\/[A-Za-z0-9]+\/[^/]+\/p\/\d+$/;  // /docId/Page/p/num
+  const RE_MD = /\[[^\]]*\]\(([^)]+)\)/;
   const RE_HREF = /href\s*=\s*["']([^"']+)["']/i;
 
-  function toStrictGristUrl(u){
+  function strictGristUrl(u){
     try{
       const url = new URL(u);
       if (url.hostname !== ALLOWED_HOST) return '';
       if (!ALLOWED_PATH_RE.test(url.pathname)) return '';
-      // Удаляем embed и любые другие параметры, кроме style
       url.hash = '';
-      for (const k of Array.from(url.searchParams.keys())
-      // принудительно ставим style=singlePage
+      // оставить только style, всё остальное убрать
+      for (const k of Array.from(url.searchParams.keys())) {
+        if (k.toLowerCase() !== 'style') url.searchParams.delete(k);
+      }
       url.searchParams.set('style','singlePage');
       return url.toString();
     }catch{ return ''; }
   }
 
-  function sanitizeUrl(raw){
+  function sanitize(raw){
     if (!raw) return '';
-    if (urlCache.has(raw)) return urlCache.get(raw);
-
+    if (cache.has(raw)) return cache.get(raw);
     let u = String(raw).trim();
-    // fix https:/ → https://
-    u = u.replace(/^(https?):\/(?!\/)/i, (_,p) => `${p}://`);
-    // без схемы → https://
-    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) {
-      if (/^docs\.getgrist\.com\b/i.test(u) || /^[a-z0-9.-]+\.[a-z]{2,}\b/i.test(u)) {
-        u = 'https://' + u;
-      }
-    }
-    // опасные схемы
-    if (/^\s*javascript:/i.test(u) || /^\s*data:/i.test(u)) { urlCache.set(raw, ''); return ''; }
-
-    const strict = toStrictGristUrl(u);
-    urlCache.set(raw, strict);
-    return strict;
+    u = u.replace(/^(https?):\/(?!\/)/i, (_,p)=>`${p}://`);         // https:/ -> https://
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u = 'https://' + u;    // без схемы -> https://
+    if (/^\s*(javascript|data):/i.test(u)) { cache.set(raw,''); return ''; }
+    const out = strictGristUrl(u);
+    cache.set(raw,out);
+    return out;
   }
 
   function extractUrl(val){
     if (!val) return '';
-    if (typeof val === 'object') {
-      return sanitizeUrl(val.url || val.href || val.link || '');
-    }
+    if (typeof val === 'object') return sanitize(val.url || val.href || val.link || '');
     const s = String(val).trim();
-    const md = s.match(RE_MD_LINK);
-    if (md && md[1]) return sanitizeUrl(md[1]);
-    const ah = s.match(RE_HREF);
-    if (ah && ah[1]) return sanitizeUrl(ah[1]);
-    return sanitizeUrl(s);
+    const md = s.match(RE_MD); if (md && md[1]) return sanitize(md[1]);
+    const ah = s.match(RE_HREF); if (ah && ah[1]) return sanitize(ah[1]);
+    return sanitize(s);
   }
 
-  // Навигация: в той же вкладке для Grist; иначе — новое окно (фолбэк)
   function openLink(u){
     if(!u) return;
     try{
-      const isGrist = new URL(u).hostname === ALLOWED_HOST;
-      if(isGrist && window.top){ window.top.location.assign(u); return; }
+      if (new URL(u).hostname === ALLOWED_HOST && window.top) {
+        window.top.location.assign(u); return;
+      }
     }catch{}
     window.open(u, '_blank', 'noopener');
   }
 
-  // Быстрый резолв колонок
-  function resolveColumns(allKeys){
-    const keys = allKeys.map(k => k.toString());
-    const lowerToOrig = new Map(keys.map(k => [k.toLowerCase(), k]));
-
+  function resolveColumns(all){
+    const keys = all.map(k => k.toString());
+    const lower = new Map(keys.map(k => [k.toLowerCase(), k]));
     const want = {
       name: normalizeId(CONFIG.columns.name).toLowerCase(),
       role: normalizeId(CONFIG.columns.role).toLowerCase(),
       link: normalizeId(CONFIG.columns.link).toLowerCase()
     };
-
-    const pick = (target, candidates) => {
-      if (lowerToOrig.has(target)) return lowerToOrig.get(target);
-      for (const c of candidates){
+    const pick = (target, cands) => {
+      if (lower.has(target)) return lower.get(target);
+      for (const c of cands){
         const lc = c.toLowerCase();
-        if (lowerToOrig.has(lc)) return lowerToOrig.get(lc);
-        // fuzzy contains
-        for (const k of lowerToOrig.keys()){
-          if (k.includes(lc)) return lowerToOrig.get(k);
-        }
+        if (lower.has(lc)) return lower.get(lc);
+        for (const k of lower.keys()) if (k.includes(lc)) return lower.get(k);
       }
       return null;
     };
-
     return {
       name: pick(want.name, ['staff','name','employee']),
       role: pick(want.role, ['role','title','position']),
-      link: pick(want.link, ['workspace_url','workspace_link','workspace','link','url'])
+      link: pick(want.link, ['workspace','workspace_url','workspace_link','link','url'])
     };
   }
 
@@ -212,108 +173,48 @@
     };
   }
 
-  // Неблокирующий рендер большими порциями
   function render(records){
     gridEl.replaceChildren();
-    if(!records || !records.length){
-      gridEl.innerHTML = '<div class="empty">No data found</div>';
-      return;
-    }
+    if (!records?.length) { gridEl.innerHTML = '<div class="empty">No data found</div>'; return; }
     const chunk = Math.max(10, CONFIG.renderChunk|0);
     let i = 0;
-
     const pump = () => {
       const frag = document.createDocumentFragment();
-      for(let c = 0; c < chunk && i < records.length; c++, i++){
+      for (let c=0; c<chunk && i<records.length; c++, i++){
         const r = records[i];
         const node = tpl.content.firstElementChild.cloneNode(true);
         node.style.setProperty('--delay', `calc(${i} * var(--fade-stagger))`);
-        const nameEl = node.querySelector('.name');
-        const roleEl = node.querySelector('.role');
+        node.querySelector('.name').textContent = r.name || '—';
+        node.querySelector('.role').textContent = r.role || '';
         const a = node.querySelector('a.badge');
-
-        nameEl.textContent = r.name || '—';
-        roleEl.textContent = r.role || '';
-
         if (r.link){
           a.href = r.link;
           a.setAttribute('aria-label', `Open workspace for ${r.name || 'member'}`);
         } else {
-          a.classList.add('disabled');
-          a.href = '#';
-          a.setAttribute('aria-disabled', 'true');
+          a.classList.add('disabled'); a.href = '#'; a.setAttribute('aria-disabled','true');
           a.querySelector('.badge-text').textContent = 'No URL';
         }
         frag.appendChild(node);
       }
       gridEl.appendChild(frag);
-      if (i < records.length) {
-        (window.requestIdleCallback || window.requestAnimationFrame)(pump);
-      }
-    };
-    pump();
-  }
-    const chunk = Math.max(10, CONFIG.renderChunk|0);
-    let i = 0;
-
-    const pump = () => {
-      const frag = document.createDocumentFragment();
-      for(let c = 0; c < chunk && i < records.length; c++, i++){
-        const r = records[i];
-        const node = tpl.content.firstElementChild.cloneNode(true);
-        node.style.setProperty('--delay', `calc(${i} * var(--fade-stagger))`);
-        const nameEl = node.querySelector('.name');
-        const roleEl = node.querySelector('.role');
-        const a = node.querySelector('a.badge');
-
-        nameEl.textContent = r.name || '—';
-        roleEl.textContent = r.role || '';
-
-        if (r.link){
-          a.href = r.link; // чтобы можно было скопировать/открыть в новой вкладке по контекстному меню
-          a.setAttribute('aria-label', `Open workspace for ${r.name || 'member'}`);
-        } else {
-          a.remove();
-        }
-        frag.appendChild(node);
-      }
-      gridEl.appendChild(frag);
-      if (i < records.length) {
-        (window.requestIdleCallback || window.requestAnimationFrame)(pump);
-      }
+      if (i < records.length) (window.requestIdleCallback || window.requestAnimationFrame)(pump);
     };
     pump();
   }
 
-  // Делегирование клика по всем кнопкам — экономит память на лиснерах
-  gridEl.addEventListener('click', (e) => {
-    const a = e.target.closest('a.badge');
-    if (!a) return;
-    e.preventDefault();
-    openLink(a.href);
+  gridEl.addEventListener('click', (e)=>{
+    const a = e.target.closest('a.badge'); if (!a) return;
+    e.preventDefault(); openLink(a.href);
   });
 
   (function init(){
-    if(!window.grist){ render(CONFIG.demoData || []); return; }
+    if (!window.grist) { render([]); return; }
     grist.ready({requiredAccess: 'read table'});
-    grist.onRecords((rows) => {
-      if(!rows || !rows.length){ render([]); return; }
-      const first = rows[0] || {};
-      const obj = first.fields || first;
-      const allCols = Object.keys(obj || {});
-      const cols = resolveColumns(allCols);
-
-      // Если колонка со ссылкой не пришла — просто предупреждаем, но ВСЁ РАВНО рендерим карточки без кнопки.
-      if (!cols.link) {
-        console.warn('[Team Directory] Link column not found. Add "Workspace_URL" to Visible columns to enable buttons. Available columns:', allCols);
-      }
-
-      const data = rows.map(r => mapRow(r, cols));
-      render(data);
-    });
-      const cols = resolveColumns(allCols);
-      const data = rows.map(r => mapRow(r, cols));
-      render(data);
+    grist.onRecords((rows)=>{
+      if (!rows?.length) { render([]); return; }
+      const cols = resolveColumns(Object.keys((rows[0]||{}).fields || rows[0] || {}));
+      if (!cols.link) console.warn('[Team Directory] Column "Workspace" not found — add it to Visible columns.');
+      render(rows.map(r => mapRow(r, cols)));
     });
   })();
   </script>
