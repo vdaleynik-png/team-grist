@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -56,20 +56,25 @@
     /* layer 1: glows */
     body::after{
       content:"";
-      position:fixed; inset:-15%;
-      z-index:0; pointer-events:none;
+      position:fixed;
+      inset:-15%;
+      z-index:0;
+      pointer-events:none;
       background:
         radial-gradient(1100px 720px at 110% -10%, var(--bg-glow-a), transparent 60%),
-        radial-gradient(900px 600px at -8% 120%,  var(--bg-glow-b), transparent 60%);
+        radial-gradient(900px 600px at -8% 120%, var(--bg-glow-b), transparent 60%);
       filter: blur(18px);
     }
+
     /* layer 2: grid (static) */
     body::before{
       content:"";
-      position:fixed; inset:-10%;
-      z-index:-1; pointer-events:none;
+      position:fixed;
+      inset:-10%;
+      z-index:-1;
+      pointer-events:none;
       background:
-        repeating-linear-gradient(0deg,  var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
+        repeating-linear-gradient(0deg, var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
         repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size));
       background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
     }
@@ -85,23 +90,22 @@
 
     .card{
       grid-column: span 12;
-      position:relative; overflow:hidden;
+      position:relative;
+      overflow:hidden;
       background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
-      border:1px solid #232a37; border-radius:18px; padding:18px;
-
+      border:1px solid #232a37;
+      border-radius:18px;
+      padding:18px;
       /* soft fade-in only */
       opacity:0;
       animation: fadeIn var(--fade-dur) var(--fade-ease) both;
       animation-delay: var(--delay, 0ms);
-
       transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
     }
+
     @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-    .card:hover{
-      background:linear-gradient(180deg, rgba(22,179,120,.06), rgba(61,217,163,.02));
-      border-color:#2d3647;
-    }
+    .card:hover{ background:linear-gradient(180deg, rgba(22,179,120,.06), rgba(61,217,163,.02)); border-color:#2d3647; }
 
     .row{display:grid; grid-template-columns:1.6fr 1.4fr auto; align-items:center; gap:12px}
     .name{font-weight:600; font-size:16px}
@@ -109,17 +113,15 @@
 
     .badge{
       display:inline-flex; align-items:center; gap:8px;
-      background:rgba(22,179,120,.14);
-      color:#b9ffe7;
+      background:rgba(22,179,120,.14); color:#b9ffe7;
       border:1px solid rgba(22,179,120,.42);
-      padding:8px 11px; border-radius:999px; font-weight:600; font-size:13px; text-decoration:none;
+      padding:8px 11px; border-radius:999px;
+      font-weight:600; font-size:13px;
+      text-decoration:none; white-space:nowrap;
       transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
-      white-space:nowrap;
     }
-    .badge:hover{
-      background:rgba(22,179,120,.18);
-      border-color:rgba(22,179,120,.52);
-    }
+
+    .badge:hover{ background:rgba(22,179,120,.18); border-color:rgba(22,179,120,.52); }
     .badge:focus-visible{ outline:0; box-shadow:0 0 0 6px var(--selection); }
     .ext{ width:16px; height:16px; display:inline-block; }
 
@@ -127,8 +129,9 @@
     @media (min-width:980px){ .card{ grid-column: span 4 } }
 
     .empty{
-      opacity:.9; color:var(--muted); text-align:center; padding:26px;
-      border:1px dashed #2a3140; border-radius:14px; background:rgba(255,255,255,.015);
+      opacity:.9; color:var(--muted); text-align:center;
+      padding:26px; border:1px dashed #2a3140; border-radius:14px;
+      background:rgba(255,255,255,.015);
     }
 
     @media (prefers-reduced-motion: reduce){
@@ -142,7 +145,6 @@
     <div class="topbar">
       <div class="title">Team directory</div>
     </div>
-
     <div id="grid" class="grid" aria-live="polite"></div>
   </div>
 
@@ -166,31 +168,32 @@
 
   <script>
     // =======================
-    //  CONFIG
+    // CONFIG
     // =======================
     const CONFIG = {
-      columns: { name: 'Staff', role: 'Role', link: 'Workspace_link' }, // ID колонок
-      linkPolicy: { enforceEmbed: false, enforceStyle: 'singlePage' },   // только singlePage
-      demoData: [],                                                      // локальные данные (вне Grist)
-      source: { mode: 'fixed', tableId: 'p' }                            // фиксированная таблица
+      columns: { name: 'Staff', role: 'Role', link: 'Workspace_URL' }, // RU: ID колонок
+      linkPolicy: { enforceEmbed: true, enforceStyle: 'light' },
+      demoData: [
+        // Пример локальных данных (раскомментируйте для проверки вне Grist):
+        // { name: 'An Nguyen', role: 'PM', link: 'docs.getgrist.com/o/example?doc=Demo&tab=People' },
+        // { name: 'Lan Pham', role: 'QA', link: 'https://example.com' },
+      ]
     };
 
     // =======================
-    //  Utils
+    // Utils
     // =======================
     const $ = (sel, root=document) => root.querySelector(sel);
-    const normalizeId = (s) => (s||'').toString().replace(/^\$/,''); // убираем $ в начале ID
+    const normalizeId = (s) => (s||'').toString().replace(/^\$/,''); // RU: убираем $ в начале ID
 
-    // Безопасное извлечение URL из разных форматов ячейки
+    // RU: безопасное извлечение URL из разных форматов ячейки
     function extractUrl(val){
       if (!val) return '';
-
       // HyperLink объект: {url, label/text}
       if (typeof val === 'object') {
         const u = val.url || val.href || val.link || '';
         return sanitizeUrl(u);
       }
-
       const s = String(val).trim();
 
       // Markdown: [label](url)
@@ -205,7 +208,7 @@
       return sanitizeUrl(s);
     }
 
-    // Нормализация и защита URL, +style=singlePage для docs.getgrist.com
+    // RU: нормализация и защита URL
     function sanitizeUrl(raw){
       if (!raw) return '';
       let u = String(raw).trim();
@@ -213,7 +216,7 @@
       // https:/ -> https://
       u = u.replace(/^(https?):\/(?!\/)/i, (_,p) => `${p}://`);
 
-      // если без схемы, но похож на домен — добавим https://
+      // если без схемы, но выглядит как домен — добавим https://
       if (!/^[a-z]+:\/\//i.test(u)) {
         if (/^docs\.getgrist\.com\b/i.test(u) || /^[a-z0-9.-]+\.[a-z]{2,}\b/i.test(u)) {
           u = 'https://' + u;
@@ -223,36 +226,22 @@
       // запрет опасных схем
       if (/^\s*javascript:/i.test(u) || /^\s*data:/i.test(u)) return '';
 
-      // auto style=singlePage для docs.getgrist.com
+      // auto embed/style для docs.getgrist.com
       try {
         const url = new URL(u);
-        if (/(^|\.)docs\.getgrist\.com$/i.test(url.hostname)) {
-          const style = CONFIG.linkPolicy?.enforceStyle;
-
-          // Если style задан и ещё не указан в ссылке — добавим
-          if (style && !url.searchParams.has('style')) {
-            url.searchParams.set('style', style);
-          }
-
-          // Если в итоге style=singlePage — embed не нужен
-          const styleVal = (url.searchParams.get('style') || '').toLowerCase();
-          if (styleVal === 'singlepage') {
-            url.searchParams.delete('embed');
-          } else if (CONFIG.linkPolicy?.enforceEmbed === true && !url.searchParams.has('embed')) {
-            // Добавим embed только если явно задано и стиль не singlePage
-            url.searchParams.set('embed','true');
-          }
-
+        if (CONFIG.linkPolicy?.enforceEmbed && /(^|\.)docs\.getgrist\.com$/i.test(url.hostname)) {
+          if (!url.searchParams.has('embed')) url.searchParams.set('embed','true');
+          const style = CONFIG.linkPolicy.enforceStyle;
+          if (style && !url.searchParams.has('style')) url.searchParams.set('style', style);
           u = url.toString();
         }
       } catch(e){
         // относительный путь — оставим как есть
       }
-
       return u;
     }
 
-    // Сопоставление ID колонок (работает и с $Prefix)
+    // RU: сопоставление ID колонок (работает и с $Prefix)
     function resolveColumns(allKeys){
       const keys = allKeys.map(k => k.toString());
       const lc = keys.map(k => k.toLowerCase());
@@ -261,8 +250,8 @@
         role: normalizeId(CONFIG.columns.role),
         link: normalizeId(CONFIG.columns.link)
       };
-
       const out = {name:null, role:null, link:null};
+
       for (const k of ['name','role','link']){
         if (!want[k]) continue;
         const i = lc.indexOf(want[k].toLowerCase());
@@ -284,14 +273,13 @@
       return {
         name: pick(out.name, ['staff','name','employee']),
         role: pick(out.role, ['role','title','position']),
-        link: pick(out.link, ['workspace_link','workspace','link','url'])
+        link: pick(out.link, ['workspace_url','workspace_link','workspace','link','url'])
       };
     }
 
-    // Нормализация строки
+    // RU: нормализация строки
     function mapRow(row, cols){
-      // row — объект "плоский": {ColA: val, ColB: val, ...}
-      const src = row || {};
+      const src = row?.fields ?? row ?? {};
       return {
         name: src?.[cols.name] ?? '',
         role: src?.[cols.role] ?? '',
@@ -299,7 +287,7 @@
       };
     }
 
-    // Рендер (через fragment)
+    // RU: рендер (через fragment)
     function render(records){
       const grid = $('#grid');
       grid.innerHTML = '';
@@ -309,8 +297,8 @@
           <div class="empty">
             No data to display.
             <div style="margin-top:6px;font-size:12px">
-              If you see this in Grist, check the widget access level (<b>Full document access</b> is required)
-              and that visible columns include <b>Staff</b>, <b>Role</b>, <b>Workspace_link</b>.
+              If you see this in Grist, check the widget access level (not <i>No document access</i>)
+              and that visible columns include <b>Staff</b>, <b>Role</b>, <b>Workspace_URL</b>.
             </div>
           </div>`;
         return;
@@ -318,39 +306,26 @@
 
       const tpl = $('#cardTpl');
       const frag = document.createDocumentFragment();
+
       records.forEach((r, i) => {
         const card = tpl.content.firstElementChild.cloneNode(true);
         card.style.setProperty('--delay', `calc(${i} * var(--fade-stagger))`);
         $('.name', card).textContent = r.name || '—';
         $('.role', card).textContent = r.role || '';
+
         const a = $('a.badge', card);
-        if (r.link) { a.href = r.link; } else { a.remove(); }
+        if (r.link) {
+          a.href = r.link;
+        } else {
+          a.remove();
+        }
         frag.appendChild(card);
       });
       grid.appendChild(frag);
     }
 
-    // Преобразование RowRecords из fetchTable(...) в массив объектов-строк
-    function rowRecordsToArray(colData){
-      if (!colData || typeof colData !== 'object') return [];
-      const keys = Object.keys(colData).filter(k => k !== 'id');
-
-      // определим длину по максимальному количеству значений среди колонок
-      const len = Math.max(0, ...keys.map(k => Array.isArray(colData[k]) ? colData[k].length : 0));
-
-      const rows = new Array(len).fill(null).map((_, i) => {
-        const obj = {};
-        for (const k of keys) {
-          const arr = colData[k];
-          obj[k] = Array.isArray(arr) ? arr[i] : undefined;
-        }
-        return obj;
-      });
-      return rows;
-    }
-
     // =======================
-    //  Init (fixed source)
+    // Init
     // =======================
     (function init(){
       // Вне Grist — просто рендерим demoData (если задано)
@@ -359,29 +334,28 @@
         return;
       }
 
-      // Читаем фиксированную таблицу: нужен доступ "full"
-      grist.ready({ requiredAccess: 'full' });
-
-      (async () => {
-        try {
-          const tableId = CONFIG.source?.tableId;
-          if (!tableId) throw new Error('CONFIG.source.tableId is empty');
-
-          // 1) Читаем колонко-ориентированные данные
-          const rr = await grist.docApi.fetchTable(tableId);
-
-          // 2) Превращаем в массив объектов-строк
-          const rowsAsObjects = rowRecordsToArray(rr);
-
-          // 3) Определяем соответствия колонок и рендерим
-          const cols = resolveColumns(Object.keys(rowsAsObjects[0] || {}));
-          const data = rowsAsObjects.map(r => mapRow(r, cols));
-          render(data);
-        } catch (err) {
-          console.error('Fixed-source fetch error:', err);
-          render([]);
-        }
-      })();
+      try{
+        grist.ready({requiredAccess: 'read table'});
+        grist.onRecords((rows) => {
+          try{
+            if (!rows || !rows.length) {
+              render([]);
+              return;
+            }
+            const first = rows[0] || {};
+            const obj = first.fields || first || {};
+            const cols = resolveColumns(Object.keys(obj));
+            const data = rows.map(r => mapRow(r, cols));
+            render(data); // порядок как в таблице, без сортировки
+          }catch(err){
+            console.error('Render error:', err);
+            render([]);
+          }
+        });
+      }catch(err){
+        console.error('Grist init error:', err);
+        render([]);
+      }
     })();
   </script>
 </body>
