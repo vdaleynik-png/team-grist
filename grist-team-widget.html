@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Team Directory — Grist Widget</title>
+<голова>
+  <мета charset="UTF-8" />
+  <мета name="viewport" content="width=device-width, initial-scale=1" />
+  <заголовок>Team Directory — Grist Widget</заголовок>
 
   <!-- Grist Plugin API -->
-  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  <сценарий src="https://docs.getgrist.com/grist-plugin-api.js"></сценарий>
 
   <!-- Шрифт (можно убрать/заменить) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <связь rel="preconnect" href="https://fonts.googleapis.com">
+  <связь rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <связь href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <style>
+  <стиль>
     :root{
-      /* Базовая тема (в духе Grist) */
+      /* ===== Базовая тема (в духе Grist) ===== */
       --bg:#0f1116;
       --panel:#151922;
       --panel-2:#1b2230;
@@ -27,10 +27,20 @@
       --accent-weak: var(--grist-color-lighter-green, #B1FFE2);
       --selection: var(--grist-color-selection, rgba(22,179,120,.15));
 
-      /* Движение — мягкое и ненавязчивое */
-      --fade-dur: 420ms;
+      /* ===== Настройки плавности ===== */
+      --fade-dur: 420ms;                /* длительность проявления карточек */
       --fade-ease: cubic-bezier(.2,.8,.2,1);
-      --hover-dur: 180ms;
+      --fade-stagger: 60ms;             /* «ступенчатая» задержка между карточками */
+      --hover-dur: 180ms;               /* плавность hover-эффектов */
+
+      /* ===== Настройки фона ===== */
+      --bg-grid-speed: 120s;            /* скорость дрейфа сетки (чем больше — тем медленнее) */
+      --bg-parallax-speed: 160s;        /* скорость плавного параллакса свечений */
+      --bg-glow-a: rgba(22,179,120,.14);/* интенсивность верхнего свечения */
+      --bg-glow-b: rgba(22,179,120,.10);/* интенсивность нижнего свечения */
+      --grid-h: rgba(255,255,255,.028); /* горизонтальные линии сетки */
+      --grid-v: rgba(255,255,255,.030); /* вертикальные линии сетки */
+      --grid-size: 72px;
     }
 
     *{box-sizing:border-box}
@@ -41,22 +51,47 @@
       overflow-x:hidden;
     }
 
-    /* ====== Мягкий анимированный задник (сетка + зелёные свечения) ====== */
+    /* ===== Плавный «живой» фон =====
+       Слой 1 (ниже): мягкие радиальные свечения, очень медленная параллакс-анимация.
+       Слой 2 (выше): тонкая сетка + лёгкий дрейф фона (background-position).
+    */
+    body::after{
+      content:"";
+      position:fixed; inset:-15%;
+      z-index:-3; pointer-events:none;
+      background:
+        radial-gradient(1100px 720px at 110% -10%, var(--bg-glow-a), transparent 60%),
+        radial-gradient(900px 600px at -8% 120%,  var(--bg-glow-b), transparent 60%);
+      filter: blur(18px);
+      /* параллакс — очень медленный, без рывков и без изменения прозрачности */
+      animation-name: parallax;
+      animation-duration: var(--bg-parallax-speed);
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+    @keyframes parallax{
+      0%   { transform: translate3d(0,0,0) rotate(0deg)   scale(1.02); }
+      50%  { transform: translate3d(12px,-8px,0) rotate(180deg) scale(1.02); }
+      100% { transform: translate3d(0,0,0) rotate(360deg) scale(1.02); }
+    }
+
     body::before{
       content:"";
       position:fixed; inset:-10%;
       z-index:-2; pointer-events:none;
       background:
-        radial-gradient(1100px 720px at 110% -10%, rgba(22,179,120,.14), transparent 60%),
-        radial-gradient(900px 600px at -8% 120%, rgba(22,179,120,.10), transparent 60%),
-        repeating-linear-gradient(0deg, rgba(255,255,255,.028) 0 1px, transparent 1px 72px),
-        repeating-linear-gradient(90deg, rgba(255,255,255,.030) 0 1px, transparent 1px 72px);
-      background-size:auto, auto, 72px 72px, 72px 72px;
-      animation: gridShift 140s linear infinite; /* очень медленно */
+        repeating-linear-gradient(0deg,  var(--grid-h) 0 1px, transparent 1px var(--grid-size)),
+        repeating-linear-gradient(90deg, var(--grid-v) 0 1px, transparent 1px var(--grid-size));
+      background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
+      /* очень медленный дрейф сетки */
+      animation-name: gridDrift;
+      animation-duration: var(--bg-grid-speed);
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
     }
-    @keyframes gridShift{
-      0%   { background-position: 0 0, 100% 100%, 0 0, 0 0; }
-      100% { background-position: 240px 0, 85% 100%, 0 -72px, -72px 0; }
+    @keyframes gridDrift{
+      0%   { background-position: 0 0, 0 0; }
+      100% { background-position: 0 calc(-1 * var(--grid-size)), calc(-1 * var(--grid-size)) 0; }
     }
 
     .wrapper{max-width:1100px; margin:0 auto; padding:28px 20px 40px}
@@ -74,12 +109,12 @@
       background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
       border:1px solid #232a37; border-radius:18px; padding:18px;
 
-      /* только мягкий fade‑in */
+      /* мягкое проявление без сдвигов */
       opacity:0;
       animation: fadeIn var(--fade-dur) var(--fade-ease) both;
       animation-delay: var(--delay, 0ms);
 
-      /* hover — только лёгкая смена фона/границы */
+      /* на наведении — только лёгкое изменение фона/границы */
       transition: background var(--hover-dur) ease, border-color var(--hover-dur) ease;
     }
     @keyframes fadeIn { from{opacity:0} to{opacity:1} }
@@ -113,28 +148,22 @@
 
     .empty{opacity:.8; color:var(--muted); text-align:center; padding:26px}
 
+    /* Системная настройка «уменьшить движение» */
     @media (prefers-reduced-motion: reduce){
-      body::before{ animation: none !important }
+      body::after, body::before{ animation: none !important }
       .card{ animation: none !important; opacity:1 !important }
       .badge, .card{ transition: none !important }
     }
-
-    .footer{margin-top:18px; color:var(--muted); font-size:12px; display:flex; justify-content:space-between; gap:10px}
-    .link{color:var(--accent); text-decoration:none}
   </style>
 </head>
 <body>
   <div class="wrapper">
     <div class="topbar">
       <div class="title">Team directory</div>
+      <!-- никаких футеров/ссылок, как просил -->
     </div>
 
     <div id="grid" class="grid" aria-live="polite"></div>
-
-    <div class="footer">
-      <span>Powered by Grist</span>
-      <a class="link" target="_blank" href="https://support.getgrist.com/widget/">How to add a Custom Widget</a>
-    </div>
   </div>
 
   <!-- Card template -->
@@ -164,7 +193,7 @@
       columns: {
         name: 'Staff',
         role: 'Role',
-        link: 'Workspace_URL'      // это ID колонки (без $)
+        link: 'Workspace_link'      // это ID колонки (без $)
       },
 
       /* RU: Политика обработки ссылок */
@@ -235,7 +264,7 @@
           u = url.toString();
         }
       } catch(e){
-        // если new URL не справился (например, относительный путь) — оставим как есть
+        // если new URL не справился — оставим как есть
       }
 
       return u;
@@ -273,7 +302,7 @@
       return {
         name: pick(out.name, ['staff','name','employee']),
         role: pick(out.role, ['role','title','position']),
-        link: pick(out.link, ['workspace_url','workspace','url'])
+        link: pick(out.link, ['workspace_link','workspace','link','url'])
       };
     }
 
@@ -300,7 +329,8 @@
       const frag = document.createDocumentFragment();
       records.forEach((r, i) => {
         const card = tpl.content.firstElementChild.cloneNode(true);
-        card.style.setProperty('--delay', `${i * 60}ms`);      // мягкий «стаггер» по непрозрачности
+        // мягкий «стаггер» по непрозрачности
+        card.style.setProperty('--delay', `calc(${i} * var(--fade-stagger))`);
         $('.name', card).textContent = r.name || '—';
         $('.role', card).textContent = r.role || '';
         const a = $('a.badge', card);
