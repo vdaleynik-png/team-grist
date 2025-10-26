@@ -107,7 +107,7 @@
 
   // Кэш для санитайза URL, чтобы не парсить одно и то же по 100 раз
   const urlCache = new Map();
-  const ALLOWED_HOST = 'vn-branch.getgrist.comt.com';
+  const ALLOWED_HOST = 'vn-branch.getgrist.com';
   const ALLOWED_PATH_RE = /^\/[A-Za-z0-9]+\/[^/]+\/p\/\d+$/; // /<docId>/<Page-Name>/p/<num>
 
   // Предкомпилированные регулярки
@@ -234,6 +234,40 @@
         roleEl.textContent = r.role || '';
 
         if (r.link){
+          a.href = r.link;
+          a.setAttribute('aria-label', `Open workspace for ${r.name || 'member'}`);
+        } else {
+          a.classList.add('disabled');
+          a.href = '#';
+          a.setAttribute('aria-disabled', 'true');
+          a.querySelector('.badge-text').textContent = 'No URL';
+        }
+        frag.appendChild(node);
+      }
+      gridEl.appendChild(frag);
+      if (i < records.length) {
+        (window.requestIdleCallback || window.requestAnimationFrame)(pump);
+      }
+    };
+    pump();
+  }
+    const chunk = Math.max(10, CONFIG.renderChunk|0);
+    let i = 0;
+
+    const pump = () => {
+      const frag = document.createDocumentFragment();
+      for(let c = 0; c < chunk && i < records.length; c++, i++){
+        const r = records[i];
+        const node = tpl.content.firstElementChild.cloneNode(true);
+        node.style.setProperty('--delay', `calc(${i} * var(--fade-stagger))`);
+        const nameEl = node.querySelector('.name');
+        const roleEl = node.querySelector('.role');
+        const a = node.querySelector('a.badge');
+
+        nameEl.textContent = r.name || '—';
+        roleEl.textContent = r.role || '';
+
+        if (r.link){
           a.href = r.link; // чтобы можно было скопировать/открыть в новой вкладке по контекстному меню
           a.setAttribute('aria-label', `Open workspace for ${r.name || 'member'}`);
         } else {
@@ -265,6 +299,18 @@
       const first = rows[0] || {};
       const obj = first.fields || first;
       const allCols = Object.keys(obj || {});
+      const cols = resolveColumns(allCols);
+
+      // Если колонка со ссылкой не пришла в виджет — подскажем пользователю
+      if (!cols.link) {
+        console.warn('[Team Directory] Link column not found. Make sure "Workspace_URL" is added to Visible columns. Available columns:', allCols);
+        gridEl.innerHTML = '<div class="empty">Добавьте колонку <b>Workspace_URL</b> в "Visible columns" у виджета — тогда появятся кнопки "Open workspace".</div>';
+        return;
+      }
+
+      const data = rows.map(r => mapRow(r, cols));
+      render(data);
+    });
       const cols = resolveColumns(allCols);
       const data = rows.map(r => mapRow(r, cols));
       render(data);
